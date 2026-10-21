@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security Verification | MSG PLS</title>
+  
+  <!-- Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- FontAwesome 6.4.0 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    :root {
+      --color-purple: #6857d5;
+      --color-purple-hover: #5746be;
+      --danger: #ea5455;
+      --success: #28c76f;
+      --warning: #ff9f43;
+      --text-dark: #1e1e1e;
+      --border-color: #e2e8f0;
+    }
+
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: radial-gradient(circle at top right, #ffffff, #f1f5f9, #e2e8f0);
+      min-height: 100vh;
+    }
+
+    /* 3D Perspective Scene Container */
+    .scene { 
+      perspective: 1200px; 
+    }
+    
+    .main-portal {
+      transform: rotateX(2deg) rotateY(-1deg);
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.6s ease;
+      box-shadow: 
+        0 30px 90px -20px rgba(104, 87, 213, 0.25),
+        0 20px 40px -15px rgba(30, 30, 30, 0.08);
+    }
+    
+    .main-portal:hover { 
+      transform: rotateX(0deg) rotateY(0deg); 
+      box-shadow: 
+        0 35px 100px -15px rgba(104, 87, 213, 0.3),
+        0 25px 50px -10px rgba(30, 30, 30, 0.1);
+    }
+
+    /* Initial Entrance Fade & Scale Animation */
+    .tab-pane-enter {
+      animation: tabFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes tabFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Shake animation on failure */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake-error {
+      animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    /* Scanner Laser Animation */
+    @keyframes scan {
+      0% { top: 0%; opacity: 0; }
+      50% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    .scanner-line {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #28c76f, transparent);
+      position: absolute;
+      width: 100%;
+      animation: scan 2.5s infinite linear;
+    }
+
+    /* Button Gradient using Brand Purple Theme */
+    .btn-gradient {
+      background: linear-gradient(90deg, #6857d5, #5746be, #6857d5);
+      background-size: 200% auto;
+      transition: all 0.4s ease;
+    }
+    .btn-gradient:hover { 
+      background-position: right center; 
+      box-shadow: 0 12px 25px -5px rgba(104, 87, 213, 0.4);
+    }
+
+    /* OTP Code Box Styles */
+    .otp-input {
+      width: 100%;
+      max-width: 3.25rem;
+      height: 4rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      border-radius: 1.25rem;
+      background: rgba(248, 250, 252, 0.85);
+      backdrop-filter: blur(6px);
+      border: 1.5px solid var(--border-color);
+      color: #0f172a;
+      transition: all 0.25s ease;
+    }
+    .otp-input:focus {
+      background: #ffffff;
+      border-color: var(--color-purple);
+      box-shadow: 0 0 0 4px rgba(104, 87, 213, 0.12);
+      outline: none;
+    }
+
+    /* Custom CSS Spinner Loader */
+    .loader {
+      border: 3px solid #f1f5f9;
+      border-top: 3px solid var(--color-purple);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 sm:p-6 min-h-screen relative overflow-x-hidden selection:bg-[#6857d5] selection:text-white">
+
+  <!-- Ambient Background Glows -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-[#28c76f] opacity-[0.10] rounded-full blur-[130px]"></div>
+    <div class="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-[#6857d5] opacity-[0.10] rounded-full blur-[130px]"></div>
+  </div>
+
+  <!-- Main 3D Card Perspective Scene -->
+  <div class="scene w-full max-w-[1080px] z-10 my-auto">
+    <div class="main-portal w-full flex flex-col lg:flex-row bg-white/95 backdrop-blur-2xl rounded-[36px] sm:rounded-[48px] overflow-hidden border border-white/80">
+      
+      <!-- Left Panel: Dark Hero Section with White Text Logo -->
+      <div class="hidden lg:flex lg:w-[45%] bg-[#0f172a] p-12 xl:p-14 flex-col justify-between relative overflow-hidden">
+        
+        <!-- Subtle Grid Pattern Background -->
+        <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(#28c76f 1px, transparent 1px); background-size: 28px 28px;"></div>
+        
+        <!-- Top Section: Brand Identity with White Text Logo -->
+        <div class="relative z-10">
+          <div class="flex items-center gap-4 mb-8">
+            <img src="msgplswhitetext.png" alt="MSG PLS Logo" class="h-12 w-auto object-contain filter drop-shadow-lg" />
+          </div>
+
+          <h1 class="text-4xl xl:text-5xl font-extrabold text-white leading-tight">
+            Verify <br/>
+            <span class="text-[#28c76f]">Identity.</span>
+          </h1>
+        </div>
+
+        <!-- Middle Section: Interactive MFA Scanner Graphic -->
+        <div class="relative flex justify-center items-center py-8 my-auto">
+          <div class="w-36 h-44 border-2 border-white/15 rounded-3xl relative flex flex-col items-center justify-center overflow-hidden bg-slate-900/60 backdrop-blur-md shadow-2xl">
+            <div class="scanner-line"></div>
+            <i class="fa-solid fa-fingerprint text-5xl text-white/20 mb-2"></i>
+            <span class="text-[9px] font-bold uppercase tracking-widest text-emerald-400/80">SCANNING 2FA</span>
+          </div>
+        </div>
+
+        <!-- Bottom Section: Platform Info -->
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-2 text-emerald-400 text-xs">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span class="text-slate-300 text-xs font-semibold">Multi-Factor Authenticator Active</span>
+          </div>
+          <p class="text-slate-400 text-xs font-medium leading-relaxed">
+            Multi-factor authorization protocol is active to safeguard your enterprise broadcasting session.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right Panel: OTP Verification Container -->
+      <div class="w-full lg:w-[55%] p-8 sm:p-12 lg:p-14 bg-white flex flex-col justify-center" 
+           x-data="{ 
+              /* =========================================================
+                 TEST / MOCK CONFIGURATION (Easily removable for production)
+                 ========================================================= */
+              ENABLE_MOCK_TEST: true,        // Set to false when connecting to real API
+              TEST_SUCCESS_CODE: '000000',  // Code that triggers success (All zeros)
+              
+              /* =========================================================
+                 STATE & TIMERS
+                 ========================================================= */
+              countdown: 30, 
+              status: 'idle',               // 'idle' | 'loading' | 'success' | 'failed'
+              hasError: false,
+              errorMessage: '',
+              
+              init() {
+                setInterval(() => { if(this.countdown > 0) this.countdown-- }, 1000);
+              },
+
+              /* Back -> return to the previous screen (the login page) */
+              goBack() {
+                if (document.referrer && window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.href = '1.login-register.html';
+                }
+              },
+              handleInput(e) {
+                const input = e.target;
+                if (input.value) {
+                  const next = input.nextElementSibling;
+                  if (next && next.tagName === 'INPUT') next.focus();
+                }
+                const allFilled = Array.from(document.querySelectorAll('.otp-input')).every(i => i.value.length === 1);
+                if (allFilled) this.startLoading();
+              },
+              handleKeyDown(e) {
+                if (e.key === 'Backspace' && !e.target.value) {
+                  const prev = e.target.previousElementSibling;
+                  if (prev && prev.tagName === 'INPUT') prev.focus();
+                }
+              },
+              handlePaste(e) {
+                const paste = e.clipboardData.getData('text').slice(0, 6).split('');
+                const inputs = document.querySelectorAll('.otp-input');
+                paste.forEach((char, i) => { if(inputs[i]) inputs[i].value = char; });
+                if (paste.length === 6) this.startLoading();
+              },
+              clearInputs() {
+                const inputs = document.querySelectorAll('.otp-input');
+                inputs.forEach(i => i.value = '');
+                if(inputs[0]) inputs[0].focus();
+              },
+              
+              startLoading() {
+                this.status = 'loading';
+                this.hasError = false;
+
+                setTimeout(() => { 
+                  const enteredCode = Array.from(document.querySelectorAll('.otp-input')).map(i => i.value).join('');
+                  
+                  // Verification logic (Uses test variables)
+                  const isSuccessful = this.ENABLE_MOCK_TEST 
+                    ? enteredCode === this.TEST_SUCCESS_CODE 
+                    : true; // Replace with backend API response
+
+                  if (isSuccessful) {
+                    // Success Path
+                    this.status = 'success';
+                    setTimeout(() => {
+                      window.location.href = '4.Dashboard.html';
+                    }, 1800);
+                  } else {
+                    // Failure Path
+                    this.status = 'failed';
+                    this.hasError = true;
+                    this.errorMessage = 'Invalid security code. Try again.';
+
+                    // Show error state briefly, then return to inputs
+                    setTimeout(() => {
+                      this.status = 'idle';
+                      this.clearInputs();
+                    }, 1800);
+                  }
+                }, 1500);
+              }
+           }">
+        <div class="max-w-md w-full mx-auto" :class="{ 'shake-error': hasError }">
+          
+          <!-- Navigation Tab Header -->
+          <nav class="flex justify-between items-center mb-8 border-b border-slate-100 pb-4">
+            <a href="1.login-register.html" @click.prevent="goBack()" class="flex items-center gap-2.5 group focus:outline-none">
+              <div class="h-7 w-7 rounded-full bg-slate-100 group-hover:bg-[#6857d5] group-hover:text-white transition-all flex items-center justify-center text-slate-500 text-xs">
+                <i class="fa-solid fa-arrow-left"></i>
+              </div>
+              <span class="text-xs font-extrabold tracking-widest text-slate-400 group-hover:text-slate-900 uppercase transition-colors">
+                BACK TO LOGIN
+              </span>
+            </a>
+
+            <div class="relative pb-2">
+              <span class="text-slate-900 font-extrabold text-xs tracking-widest uppercase">
+                SECURITY VERIFICATION
+              </span>
+              <div class="absolute -bottom-[17px] right-0 w-full h-1 bg-[#28c76f] rounded-full"></div>
+            </div>
+          </nav>
+
+          <!-- Main Content Wrapper -->
+          <div class="space-y-6 tab-pane-enter">
+            
+            <header>
+              <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Enter OTP Code</h2>
+              <p class="text-slate-500 mt-1.5 text-xs font-medium">
+                We've sent a 6-digit security code to your registered authenticator device.
+              </p>
+            </header>
+
+            <!-- Fixed Height Interactive Area (Prevents Form Resizing) -->
+            <div class="relative h-[4.5rem] w-full my-4">
+              
+              <!-- STATE 1: 6-Digit OTP Inputs (Idle Mode) -->
+              <div class="absolute inset-0 flex justify-between gap-1.5 sm:gap-2 items-center" 
+                   x-show="status === 'idle'" 
+                   x-transition:enter="transition ease-out duration-200"
+                   x-transition:enter-start="opacity-0 scale-95"
+                   x-transition:enter-end="opacity-100 scale-100"
+                   @paste="handlePaste($event)">
+                <input type="text" maxlength="1" class="otp-input" autofocus @input="handleInput" @keydown="handleKeyDown">
+                <input type="text" maxlength="1" class="otp-input" @input="handleInput" @keydown="handleKeyDown">
+                <input type="text" maxlength="1" class="otp-input" @input="handleInput" @keydown="handleKeyDown">
+                <input type="text" maxlength="1" class="otp-input" @input="handleInput" @keydown="handleKeyDown">
+                <input type="text" maxlength="1" class="otp-input" @input="handleInput" @keydown="handleKeyDown">
+                <input type="text" maxlength="1" class="otp-input" @input="handleInput" @keydown="handleKeyDown">
+              </div>
+
+              <!-- STATE 2: Loading Indicator -->
+              <div x-show="status === 'loading'" 
+                   x-transition:enter="transition ease-out duration-200"
+                   x-transition:enter-start="opacity-0 scale-95"
+                   x-transition:enter-end="opacity-100 scale-100"
+                   class="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-2xl">
+                <div class="loader"></div>
+                <p class="text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-1">Authenticating...</p>
+              </div>
+
+              <!-- STATE 3: Success Icon Animation Screen -->
+              <div x-show="status === 'success'" 
+                   x-transition:enter="transition ease-out duration-200"
+                   x-transition:enter-start="opacity-0 scale-95"
+                   x-transition:enter-end="opacity-100 scale-100"
+                   class="absolute inset-0 flex flex-col items-center justify-center bg-emerald-50 border border-emerald-200 rounded-2xl">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-circle-check text-xl text-[#28c76f] animate-bounce"></i>
+                  <p class="text-xs font-extrabold text-emerald-800 uppercase tracking-widest">Verification Successful!</p>
+                </div>
+                <p class="text-[10px] text-emerald-600 font-semibold mt-0.5">Redirecting to Dashboard...</p>
+              </div>
+
+              <!-- STATE 4: Failed Error Icon Screen -->
+              <div x-show="status === 'failed'" 
+                   x-transition:enter="transition ease-out duration-200"
+                   x-transition:enter-start="opacity-0 scale-95"
+                   x-transition:enter-end="opacity-100 scale-100"
+                   class="absolute inset-0 flex flex-col items-center justify-center bg-red-50 border border-red-200 rounded-2xl">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-circle-xmark text-xl text-[#ea5455] animate-pulse"></i>
+                  <p class="text-xs font-extrabold text-red-800 uppercase tracking-widest">Verification Failed</p>
+                </div>
+                <p class="text-[10px] text-red-600 font-semibold mt-0.5" x-text="errorMessage"></p>
+              </div>
+
+            </div>
+
+            <!-- Action Button -->
+            <button @click="startLoading" :disabled="status !== 'idle'" type="button" class="btn-gradient w-full py-3.5 rounded-2xl text-white font-bold text-xs uppercase tracking-[0.15em] shadow-lg shadow-[#6857d5]/25 transform active:scale-[0.98] transition-transform disabled:opacity-50">
+              <span x-text="status === 'loading' ? 'Validating Token...' : (status === 'success' ? 'Verified!' : (status === 'failed' ? 'Invalid Code' : 'Verify & Authorize'))"></span>
+              <i x-show="status === 'idle'" class="fa-solid fa-shield-check ml-2 text-xs"></i>
+            </button>
+
+            <!-- Expiration & Resend Footer -->
+            <footer class="pt-4 border-t border-slate-100 mt-6 text-center" x-show="status === 'idle'">
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Security Code expires in: 
+                <span class="text-[#6857d5] font-extrabold" x-text="`0:${countdown < 10 ? '0' + countdown : countdown}`"></span>
+              </p>
+              
+              <button type="button" @click="countdown = 30; clearInputs();" :disabled="countdown > 0" :class="countdown > 0 ? 'opacity-40 cursor-not-allowed text-slate-400' : 'text-[#6857d5] hover:underline'" class="text-xs font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Resend Security Code</span>
+              </button>
+            </footer>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom Gateway Label -->
+  <div class="fixed bottom-6 text-[10px] font-bold text-slate-400 tracking-[0.4em] uppercase animate-pulse pointer-events-none text-center">
+    2FA Security Gateway • MSG PLS
+  </div>
+
+</body>
+</html>

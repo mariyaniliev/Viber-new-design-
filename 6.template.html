@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSG PLS - Templates</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --color-purple: #6857d5;
+      --color-purple-hover: #5746be;
+      --color-purple-bg: rgba(104, 87, 213, 0.08);
+      --color-purple-badge: rgba(104, 87, 213, 0.15);
+
+      --danger: #ea5455;
+      --danger-light: #fceaea;
+      --success: #28c76f;
+      --success-light: #e8fadf;
+      --warning: #ff9f43;
+      --info: #00cfe8;
+      
+      --text-dark: #1e1e1e;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --bg-light: #f8fafc;
+      --sidebar-width: 250px;
+      --sidebar-collapsed-width: 70px;
+      --header-height: 68px;
+
+      --approved-bg: #e8fadf;
+      --approved-text: #28c76f;
+      --declined-bg: #fceaea;
+      --declined-text: #ea5455;
+      --ready-bg: rgba(104, 87, 213, 0.12);
+      --ready-text: #6857d5;
+      --review-bg: #fff3e0;
+      --review-text: #ff9f43;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { display: flex; background-color: #f4f5fa; color: var(--text-dark); min-height: 100vh; overflow: hidden; }
+
+    aside {
+      width: var(--sidebar-width);
+      background-color: #ffffff;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100vh;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    body.sidebar-collapsed aside { width: var(--sidebar-collapsed-width); }
+
+    .brand {
+      height: var(--header-height);
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      height: 38px;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      overflow: hidden;
+    }
+
+    .brand-logo-container img { height: 38px; width: auto; object-fit: contain; }
+    body.sidebar-collapsed .brand-logo-container { opacity: 0; visibility: hidden; }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--text-dark);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .hamburger-btn:hover { background-color: var(--color-purple-bg); color: var(--color-purple); }
+
+    .nav-list-wrapper { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 8px; }
+    .nav-list-wrapper::-webkit-scrollbar { width: 4px; }
+    .nav-list-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .nav-list { list-style: none; }
+    .nav-item {
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 500;
+      margin-bottom: 4px;
+      transition: background-color 0.2s, color 0.2s;
+      height: 44px;
+      position: relative;
+      text-decoration: none;
+    }
+    .nav-item i { font-size: 18px; min-width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-item span { transition: opacity 0.2s ease, visibility 0.2s ease; }
+    body.sidebar-collapsed .nav-item span { opacity: 0; visibility: hidden; }
+
+    .nav-item:hover { background-color: var(--bg-light); color: var(--text-dark); }
+    .nav-item.active { background-color: var(--color-purple-bg); color: var(--color-purple); font-weight: 600; }
+
+    /* Unread Messages Pulse Dot */
+    .unread-pulse-dot {
+      width: 9px;
+      height: 9px;
+      background-color: var(--danger);
+      border-radius: 50%;
+      position: absolute;
+      right: 14px;
+      box-shadow: 0 0 0 2px #ffffff;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(234, 84, 85, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0); }
+    }
+
+
+    .version-tag { 
+      padding: 16px 20px; 
+      font-size: 12px; 
+      color: var(--text-muted); 
+      border-top: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative; }
+    
+    header {
+      background: #ffffff;
+      height: var(--header-height);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .user-profile { display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; }
+
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+      overflow-y: auto;
+    }
+
+    .page-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .page-title { font-size: 26px; font-weight: 700; }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-purple { background-color: var(--color-purple); color: #ffffff; }
+    .btn-purple:hover { background-color: var(--color-purple-hover); transform: translateY(-1px); }
+    .btn-outline { background-color: #ffffff; border-color: var(--border-color); color: var(--text-dark); }
+    .btn-outline:hover { background-color: var(--bg-light); border-color: #cbd5e1; }
+    .btn-danger { background-color: var(--danger); color: #fff; }
+    .btn-danger:hover { background-color: #d63031; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .filter-card {
+      background: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* Floating Outline Input Fields */
+    .floating-field {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+    
+    .floating-field label {
+      position: absolute;
+      top: -9px;
+      left: 12px;
+      background: #ffffff;
+      padding: 0 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #64748b;
+      z-index: 2;
+    }
+
+    .floating-field.focused label { color: var(--color-purple); }
+
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      outline: none;
+      font-size: 14px;
+      background: #fff;
+      color: var(--text-dark);
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    .form-control:focus { border-color: var(--color-purple); }
+
+    /* Unified filter-bar control sizing (matches 8.Campaign: 38px tall, 13px text) */
+    .filter-card .form-control {
+      height: 38px;
+      padding: 0 12px;
+      font-size: 13px;
+    }
+
+    .search-input { width: 280px; }
+    .select-field { width: 180px; cursor: pointer; }
+
+    .view-toggle-box {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      height: 42px;
+      background: var(--bg-light);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      gap: 4px;
+    }
+
+    .toggle-btn {
+      border: none;
+      background: transparent;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toggle-btn.active {
+      background: #ffffff;
+      color: var(--color-purple);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .status-approved { background: var(--approved-bg); color: var(--approved-text); }
+    .status-declined { background: var(--declined-bg); color: var(--declined-text); }
+    .status-ready { background: var(--ready-bg); color: var(--ready-text); }
+    .status-reviewing { background: var(--review-bg); color: var(--review-text); }
+    .status-not_submitted { background: var(--bg-light); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+    .tag {
+      background: var(--bg-light);
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Tooltip Custom Styles */
+    .has-tooltip {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .has-tooltip .tooltip-text {
+      visibility: hidden;
+      width: 220px;
+      background-color: #1e293b;
+      color: #ffffff;
+      text-align: left;
+      border-radius: 8px;
+      padding: 8px 12px;
+      position: absolute;
+      z-index: 100;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      font-size: 11px;
+      font-weight: 400;
+      line-height: 1.4;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      white-space: normal;
+      pointer-events: none;
+    }
+
+    .has-tooltip .tooltip-text::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #1e293b transparent transparent transparent;
+    }
+
+    .has-tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    /* Fixed height for all cards in Grid View */
+    .template-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      transition: transform 0.2s, box-shadow 0.2s;
+      height: 380px;
+    }
+
+    .template-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-tags { display: flex; gap: 6px; margin-bottom: 12px; }
+
+    .card-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Fixed preview box size inside cards */
+    .card-preview-box {
+      background: var(--bg-light);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      color: var(--text-dark);
+      height: 125px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .declined-box {
+      background: var(--danger-light);
+      border: 1px solid rgba(234, 84, 85, 0.3);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 11px;
+      color: var(--danger);
+      height: 125px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      line-height: 1.35;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
+      margin-top: auto;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 15px;
+      padding: 6px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-btn:hover:not(:disabled) { color: var(--color-purple); background: var(--color-purple-bg); }
+    .icon-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Table Container & Table Styles */
+    .table-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      display: none;
+    }
+
+    .table-header-bar {
+      padding: 12px 24px;
+      height: 58px;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      background-color: #fafafa;
+    }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { padding: 14px 24px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+    th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+
+    tbody tr:hover { background-color: #f8fafc; }
+
+    .row-actions { visibility: hidden; display: flex; gap: 12px; justify-content: flex-end; align-items: center; }
+    tbody tr:hover .row-actions { visibility: visible; }
+
+    /* Pagination Bar */
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      padding: 12px 24px;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .page-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border-color);
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-dark);
+      transition: all 0.2s;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: var(--color-purple-bg);
+      color: var(--color-purple);
+      border-color: var(--color-purple);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Modal Overlay & Card Styling */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      width: 95%;
+      max-width: 1040px;
+      height: 90vh;
+      border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      display: grid;
+      grid-template-columns: 1fr 410px;
+      overflow: hidden;
+    }
+
+    .modal-form-side {
+      padding: 32px 36px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .modal-form-side::-webkit-scrollbar { width: 6px; }
+    .modal-form-side::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .modal-preview-side {
+      background: #fafafa;
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+    }
+
+    /* Standalone Phone Preview Modal Styling */
+    .phone-modal-card {
+      background: transparent;
+      box-shadow: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .close-phone-modal {
+      position: absolute;
+      top: -15px;
+      right: -15px;
+      background: #ffffff;
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 16px;
+      color: var(--text-dark);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1010;
+      transition: all 0.2s;
+    }
+    .close-phone-modal:hover { background: #f1f5f9; color: var(--danger); }
+
+    /* REALISTIC IPHONE MOCKUP STYLING */
+    .iphone-device {
+      width: 300px;
+      height: 590px;
+      background: #1e1b2e;
+      border-radius: 48px;
+      padding: 12px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25), 0 0 0 2px #312e4a;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .iphone-screen {
+      background: #ffffff;
+      flex: 1;
+      border-radius: 38px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .iphone-status-bar {
+      height: 38px;
+      padding: 10px 22px 0 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #000;
+      z-index: 10;
+    }
+
+    .iphone-status-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 11px;
+    }
+
+    .iphone-header {
+      height: 44px;
+      padding: 0 16px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+      background: #ffffff;
+    }
+
+    .iphone-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #6857d5;
+      font-size: 14px;
+    }
+
+    .iphone-header-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      max-width: 150px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .iphone-header-right {
+      display: flex;
+      gap: 12px;
+      color: #6857d5;
+      font-size: 14px;
+    }
+
+    .iphone-body {
+      flex: 1;
+      background: #f8fafc;
+      padding: 16px 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    /* VIBER / CHAT BUBBLE */
+    .viber-bubble {
+      background: #f1f3f9;
+      border-radius: 16px 16px 4px 16px;
+      padding: 12px;
+      max-width: 88%;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .viber-bubble-text {
+      font-size: 13px;
+      color: #1e293b;
+      line-height: 1.45;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .viber-media-container {
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .viber-media-container img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .viber-media-container video {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Attachment Document View */
+    .viber-file-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      width: 100%;
+    }
+
+    .viber-file-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      background: #e0e7ff;
+      color: var(--color-purple);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .viber-file-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .viber-file-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e293b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .viber-file-sub {
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .viber-btn {
+      background: #6857d5;
+      color: #ffffff;
+      text-align: center;
+      padding: 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      display: block;
+      margin-top: 4px;
+      box-shadow: 0 2px 4px rgba(104, 87, 213, 0.2);
+    }
+
+    .viber-time {
+      font-size: 10px;
+      color: #94a3b8;
+      align-self: flex-end;
+      margin-top: 2px;
+    }
+
+    .placeholders-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .placeholders-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .placeholders-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .placeholder-chip {
+      background: #2563eb;
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 18px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .placeholder-chip:hover { opacity: 0.9; }
+
+    .modal-actions {
+      margin-top: auto;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="brand">
+      <button class="hamburger-btn" id="sidebarToggle" onclick="toggleSidebar()" title="Toggle Menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="brand-logo-container">
+        <img src="logoNew.png" alt="MSG PLS Logo" />
+      </div>
+    </div>
+
+    <div class="nav-list-wrapper">
+      <ul class="nav-list">
+        <li><a class="nav-item" href="4.Dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+        <li>
+          <a class="nav-item" href="5.Messages.html">
+            <i class="fa-solid fa-comments"></i>
+            <span>Messages</span>
+            <div class="unread-pulse-dot" id="sidebarUnreadDot" title="New unread replies"></div>
+          </a>
+        </li>
+        <li><a class="nav-item active" href="6.template.html"><i class="fa-solid fa-layer-group"></i> <span>Templates</span></a></li>
+        <li><a class="nav-item" href="7.Recipients.html"><i class="fa-solid fa-users"></i> <span>Recipients</span></a></li>
+        <li><a class="nav-item" href="8.Campaign%20(not%20final%202).html"><i class="fa-solid fa-bullhorn"></i> <span>Campaigns</span></a></li>
+        <li><a class="nav-item" href="9.Automations%20(not%20final).html"><i class="fa-solid fa-robot"></i> <span>Automations</span></a></li>
+        <li><a class="nav-item" href="#" onclick="return false;" title="Coming soon"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+      </ul>
+    </div>
+
+    <div class="version-tag">
+      <span>v2.6.0</span>
+    </div>
+  </aside>
+
+  <!-- Main View -->
+  <main>
+    <header>
+      <div class="user-profile">
+        <i class="fa-solid fa-circle-user fa-lg" style="color: var(--color-purple)"></i> Business Account <i class="fa-solid fa-angle-down"></i>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <div class="page-title-row">
+        <h1 class="page-title">Message Templates</h1>
+        <button class="btn btn-purple" onclick="openModal()">
+          <i class="fa-solid fa-plus"></i> Create Template
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-card">
+        <div class="floating-field" style="width: auto;">
+          <input type="text" id="searchInput" class="form-control search-input" placeholder="Search templates..." oninput="onFilterChange()" />
+        </div>
+
+        <div class="floating-field" style="width: auto;">
+          <label>Type</label>
+          <select id="typeFilter" class="form-control select-field" onchange="onFilterChange()">
+            <option value="ALL">All Types</option>
+            <option value="Transactional">Transactional</option>
+            <option value="Promotional">Promotional</option>
+          </select>
+        </div>
+
+        <div class="floating-field" style="width: auto;">
+          <label>Status</label>
+          <select id="statusFilter" class="form-control select-field" onchange="onFilterChange()">
+            <option value="ALL">All Statuses</option>
+            <option value="Viber Approved">Viber Approved</option>
+            <option value="Viber Declined">Viber Declined</option>
+            <option value="Viber Reviewing">Viber Reviewing</option>
+            <option value="Not Submitted">Not Submitted</option>
+            <option value="Ready">Ready</option>
+          </select>
+        </div>
+
+        <div class="view-toggle-box">
+          <button id="gridBtn" class="toggle-btn active" onclick="switchView('grid')">
+            <i class="fa-solid fa-border-all"></i> Grid
+          </button>
+          <button id="listBtn" class="toggle-btn" onclick="switchView('list')">
+            <i class="fa-solid fa-list"></i> List
+          </button>
+        </div>
+      </div>
+
+      <!-- Grid View -->
+      <div id="gridView" class="grid-container"></div>
+
+      <!-- List View -->
+      <div id="listView" class="table-card">
+        <div class="table-header-bar">
+          <div class="table-header-left">
+            <span id="selectedCount" style="font-size: 14px; color: var(--text-muted);">0 selected</span>
+            <button id="bulkDeleteBtn" class="btn btn-danger btn-sm" style="display: none; margin-left: 12px;" onclick="bulkDelete()">
+              <i class="fa-solid fa-trash"></i> Delete Selected
+            </button>
+          </div>
+        </div>
+
+        <table id="mainTable">
+          <thead>
+            <tr id="tableHeaderRow">
+              <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" /></th>
+              <th>Template Name</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Content Preview</th>
+              <th>Status</th>
+              <th style="width: 100px; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="listTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Component -->
+      <div class="pagination-bar">
+        <div class="floating-field" style="width: auto; flex-direction: row; align-items: center; gap: 8px;">
+          <span style="font-size: 13px; color: var(--text-muted);">Show per page:</span>
+          <select id="pageSizeSelect" class="form-control" style="width: 80px; padding: 6px 10px;" onchange="changePageSize()">
+            <option value="20">20</option>
+            <option value="35">35</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+
+        <div style="font-size: 13px; color: var(--text-muted);" id="paginationInfo">Showing 0-0 of 0</div>
+
+        <div class="pagination-controls">
+          <button id="prevPageBtn" class="page-btn" onclick="changePage(-1)"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+          <span id="currentPageLabel" style="font-size: 13px; font-weight: 600;">1</span>
+          <button id="nextPageBtn" class="page-btn" onclick="changePage(1)">Next <i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create / Edit Template Modal -->
+  <div id="templateModal" class="modal-overlay">
+    <div class="modal-card">
+      
+      <!-- Left: Form Controls -->
+      <div class="modal-form-side">
+        <h2 id="modalTitle" style="font-size: 22px; font-weight: 700; color: #0f172a;">Create New Template</h2>
+
+        <div class="floating-field">
+          <label>Template Name</label>
+          <input type="text" id="modalName" class="form-control" placeholder="e.g. Test 123" oninput="updateLivePreview()">
+        </div>
+
+        <div class="floating-field">
+          <label>Message Type</label>
+          <select id="modalType" class="form-control" onchange="handleTypeChange()">
+            <option value="Transactional">Transactional</option>
+            <option value="Promotional">Promotional</option>
+          </select>
+        </div>
+
+        <div class="floating-field">
+          <label>Template Category</label>
+          <select id="modalCategory" class="form-control" onchange="handleCategoryChange()"></select>
+        </div>
+
+        <!-- Placeholders -->
+        <div class="placeholders-wrapper" id="placeholdersGroup">
+          <div class="placeholders-label">Available Placeholders:</div>
+          <div style="font-size: 11px; color: #64748b; font-weight: 600;">Standard:</div>
+          <div class="placeholders-group">
+            <span class="placeholder-chip" onclick="insertPlaceholder('{{first_name}}')">{{first_name}}</span>
+            <span class="placeholder-chip" onclick="insertPlaceholder('{{last_name}}')">{{last_name}}</span>
+            <span class="placeholder-chip" onclick="insertPlaceholder('{{phone_num}}')">{{phone_num}}</span>
+          </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="floating-field" id="contentGroup">
+          <label>Template Content</label>
+          <textarea id="modalContent" class="form-control" rows="4" placeholder="Hit this is template" oninput="updateLivePreview()" style="border-radius: 8px;"></textarea>
+        </div>
+
+        <!-- Media Select Field -->
+        <div class="floating-field hidden" id="mediaGroup">
+          <label>Media</label>
+          <select id="modalMedia" class="form-control" onchange="updateLivePreview()">
+            <option value="(Senior Full-Stack) Sarkis.pdf">(Senior Full-Stack) Sarkis.pdf</option>
+            <option value="Image_20933662_128_0.jpg">Image_20933662_128_0.jpg</option>
+            <option value="sample-5s.mp4">sample-5s.mp4</option>
+            <option value="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400">Product_Shot.jpg</option>
+          </select>
+        </div>
+
+        <!-- Thumbnail Option (for Video Categories) -->
+        <div class="floating-field hidden" id="thumbnailGroup">
+          <label>Thumbnail</label>
+          <select id="modalThumbnail" class="form-control" onchange="updateLivePreview()">
+            <option value="">Thumbnail</option>
+            <option value="Image_20933662_128_0.jpg">Image_20933662_128_0.jpg</option>
+            <option value="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400">Default Video Poster</option>
+          </select>
+        </div>
+
+        <!-- Button Caption Field -->
+        <div class="floating-field hidden" id="buttonCaptionGroup">
+          <label>Button caption</label>
+          <input type="text" id="modalBtnCaption" class="form-control" placeholder="Натисни ме" oninput="updateLivePreview()" style="background-color: #f0fdf4;">
+        </div>
+
+        <!-- Button Action Field -->
+        <div class="floating-field hidden" id="buttonActionGroup">
+          <label>Button action</label>
+          <input type="text" id="modalBtnAction" class="form-control" placeholder="https://www.genericsoft.eu" oninput="updateLivePreview()" style="background-color: #f0fdf4;">
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-purple" onclick="saveTemplate()">Save Template</button>
+        </div>
+      </div>
+
+      <!-- Right: Mobile Phone Preview inside Edit/Create -->
+      <div class="modal-preview-side">
+        <div class="iphone-device">
+          <div class="iphone-screen">
+            <div class="iphone-status-bar">
+              <span class="phoneTime">19:23</span>
+              <div class="iphone-status-icons">
+                <i class="fa-solid fa-signal"></i>
+                <i class="fa-solid fa-wifi"></i>
+                <i class="fa-solid fa-battery-full"></i>
+              </div>
+            </div>
+
+            <div class="iphone-header">
+              <div class="iphone-header-left">
+                <i class="fa-solid fa-chevron-left"></i>
+              </div>
+              <div class="iphone-header-title previewPhoneTitle">Business</div>
+              <div class="iphone-header-right">
+                <i class="fa-solid fa-store"></i>
+                <i class="fa-solid fa-circle-info"></i>
+              </div>
+            </div>
+
+            <div class="iphone-body">
+              <div class="viber-bubble">
+                <div class="previewText viber-bubble-text">Hit this is template</div>
+
+                <div class="previewFileCard viber-file-card hidden">
+                  <div class="viber-file-icon fileIcon"><i class="fa-solid fa-file-pdf"></i></div>
+                  <div class="viber-file-info">
+                    <div class="viber-file-name fileName">Document.pdf</div>
+                    <div class="viber-file-sub fileSub">Attachment</div>
+                  </div>
+                </div>
+
+                <div class="previewImageContainer viber-media-container hidden">
+                  <img class="previewImage" src="" alt="Media attachment" />
+                </div>
+
+                <div class="previewVideoContainer viber-media-container hidden">
+                  <video class="previewVideo" controls poster="">
+                    <source src="" type="video/mp4">
+                  </video>
+                </div>
+
+                <a class="previewButton viber-btn hidden" href="#" target="_blank">Натисни ме</a>
+                <div class="viber-time chatTime">19:23</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Standalone Phone Preview Modal (Triggered by Eye Icon) -->
+  <div id="phonePreviewModal" class="modal-overlay">
+    <div class="phone-modal-card">
+      <button class="close-phone-modal" onclick="closePhonePreview()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="iphone-device">
+        <div class="iphone-screen">
+          <div class="iphone-status-bar">
+            <span class="phoneTime">19:23</span>
+            <div class="iphone-status-icons">
+              <i class="fa-solid fa-signal"></i>
+              <i class="fa-solid fa-wifi"></i>
+              <i class="fa-solid fa-battery-full"></i>
+            </div>
+          </div>
+
+          <div class="iphone-header">
+            <div class="iphone-header-left">
+              <i class="fa-solid fa-chevron-left"></i>
+            </div>
+            <div class="iphone-header-title previewPhoneTitle">Business</div>
+            <div class="iphone-header-right">
+              <i class="fa-solid fa-store"></i>
+              <i class="fa-solid fa-circle-info"></i>
+            </div>
+          </div>
+
+          <div class="iphone-body">
+            <div class="viber-bubble">
+              <div class="previewText viber-bubble-text"></div>
+
+              <div class="previewFileCard viber-file-card hidden">
+                <div class="viber-file-icon fileIcon"><i class="fa-solid fa-file-pdf"></i></div>
+                <div class="viber-file-info">
+                  <div class="viber-file-name fileName">Document.pdf</div>
+                  <div class="viber-file-sub fileSub">Attachment</div>
+                </div>
+              </div>
+
+              <div class="previewImageContainer viber-media-container hidden">
+                <img class="previewImage" src="" alt="Media attachment" />
+              </div>
+
+              <div class="previewVideoContainer viber-media-container hidden">
+                <video class="previewVideo" controls poster="">
+                  <source src="" type="video/mp4">
+                </video>
+              </div>
+
+              <a class="previewButton viber-btn hidden" href="#" target="_blank">Натисни ме</a>
+              <div class="viber-time chatTime">19:23</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-collapsed');
+    }
+
+    let templates = [
+      { id: "e194", name: "Test 123", type: "Transactional", category: "Text Only", status: "Viber Declined", content: "Hit this is template {{phone_num}}", created: "29/07/26 18:01" },
+      { id: "7b22", name: "M Transactional Test 5", type: "Transactional", category: "Text Only", status: "Viber Approved", content: "Hi {{first_name}} thank you for using our services. Call us at {{phone_num}}", created: "29/07/26 18:14" },
+      { id: "34f0", name: "Our title is this", type: "Promotional", category: "Text+Button", status: "Ready", content: "Hi this is messae", created: "04/08/26 17:01", buttonText: "Натисни ме", media: "" },
+      { id: "6416", name: "Mariyan Iliev", type: "Promotional", category: "Video+Text", status: "Viber Reviewing", content: "This is somehing new", created: "04/08/26 17:37" }
+    ];
+
+    let currentEditingId = null;
+    let currentPage = 1;
+    let pageSize = 20;
+
+    const categoryOptions = {
+      Transactional: ["Text Only", "File"],
+      Promotional: [
+        "Image Only", 
+        "Text+Button", 
+        "Text+Image+Button", 
+        "Video Only", 
+        "Video+Text", 
+        "Video+Text+Action Button", 
+        "Video+Text+Button"
+      ]
+    };
+
+    function getTypeBadge(type) {
+      const isTransactional = type === 'Transactional';
+      const tooltipMsg = isTransactional 
+        ? "Transactional templates must be pre-registered with Viber and pass its moderation before they can be sent. Review takes up to 24 hours."
+        : "Promotional templates need no Viber pre-validation and can be used immediately, but carry a higher per-message delivery cost.";
+
+      return `
+        <span class="tag has-tooltip">
+          ${type} <i class="fa-solid fa-circle-info" style="font-size: 10px; color: var(--text-muted);"></i>
+          <span class="tooltip-text">${tooltipMsg}</span>
+        </span>
+      `;
+    }
+
+    function getStatusBadge(status) {
+      let statusClass = 'status-sent';
+      let icon = 'fa-paper-plane';
+
+      if (status === 'Viber Approved') {
+        statusClass = 'status-approved';
+        icon = 'fa-circle-check';
+      } else if (status === 'Viber Declined') {
+        statusClass = 'status-declined';
+        icon = 'fa-circle-xmark';
+      } else if (status === 'Viber Reviewing') {
+        statusClass = 'status-reviewing';
+        icon = 'fa-clock';
+      } else if (status === 'Ready') {
+        statusClass = 'status-ready';
+        icon = 'fa-check';
+      } else {
+        statusClass = 'status-not_submitted';
+        icon = 'fa-circle-dot';
+      }
+
+      if (status === 'Viber Reviewing') {
+        return `
+          <span class="status-tag ${statusClass} has-tooltip">
+            <i class="fa-solid ${icon}"></i> ${status}
+            <span class="tooltip-text">Viber review usually takes about 10–15 minutes. It can take up to 24 hours.</span>
+          </span>
+        `;
+      }
+
+      return `<span class="status-tag ${statusClass}"><i class="fa-solid ${icon}"></i> ${status}</span>`;
+    }
+
+    function getEditButtonHtml(t) {
+      const isTransactional = t.type === 'Transactional';
+      const editTooltipText = "Transactional templates are registered with Viber and cannot be edited. Delete this one and create a new one instead.";
+
+      if (isTransactional) {
+        return `
+          <div class="has-tooltip" style="display: inline-block;">
+            <button class="icon-btn" disabled><i class="fa-solid fa-pen"></i></button>
+            <span class="tooltip-text">${editTooltipText}</span>
+          </div>
+        `;
+      }
+
+      return `<button class="icon-btn" title="Edit" onclick="editTemplate('${t.id}')"><i class="fa-solid fa-pen"></i></button>`;
+    }
+
+    function renderTemplates() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const type = document.getElementById('typeFilter').value;
+      const status = document.getElementById('statusFilter').value;
+
+      const filtered = templates.filter(t => {
+        const matchesSearch = t.name.toLowerCase().includes(search) || (t.content && t.content.toLowerCase().includes(search));
+        const matchesType = type === 'ALL' || t.type === type;
+        const matchesStatus = status === 'ALL' || t.status === status;
+        return matchesSearch && matchesType && matchesStatus;
+      });
+
+      // Pagination Slicing
+      const totalItems = filtered.length;
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+      const pageData = filtered.slice(startIndex, endIndex);
+
+      // Render Grid
+      const grid = document.getElementById('gridView');
+      grid.innerHTML = pageData.map(t => `
+        <div class="template-card">
+          <div>
+            <div class="card-header">
+              <span class="card-title">${t.name}</span>
+              ${getStatusBadge(t.status)}
+            </div>
+            <div class="card-tags">
+              ${getTypeBadge(t.type)}
+              <span class="tag">${t.category}</span>
+            </div>
+            <div class="card-meta">
+              <span>Created: ${t.created}</span>
+              <span>ID: ...${t.id}</span>
+            </div>
+            ${t.status === 'Viber Declined' ? `
+              <div class="declined-box">
+                <strong><i class="fa-solid fa-triangle-exclamation"></i> Declined: template declined</strong><br>
+                Editing will not resubmit this template to Viber. Delete it and create a new one to start a fresh review.
+              </div>
+            ` : `
+              <div class="card-preview-box">${t.content || '<i>[No Text Content]</i>'}</div>
+            `}
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-outline btn-sm" onclick="previewTemplate('${t.id}')"><i class="fa-solid fa-eye"></i> Preview</button>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              ${getEditButtonHtml(t)}
+              <button class="icon-btn" title="Delete" onclick="deleteTemplate('${t.id}')"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Render Table
+      const list = document.getElementById('listTableBody');
+      list.innerHTML = pageData.map(t => `
+        <tr>
+          <td><input type="checkbox" class="row-checkbox" onchange="updateSelection()" value="${t.id}"></td>
+          <td><strong>${t.name}</strong></td>
+          <td>${getTypeBadge(t.type)}</td>
+          <td>${t.category}</td>
+          <td>${t.content || '[Media Template]'}</td>
+          <td>${getStatusBadge(t.status)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" title="Preview" onclick="previewTemplate('${t.id}')"><i class="fa-solid fa-eye"></i></button>
+              ${getEditButtonHtml(t)}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      updateSelection();
+
+      // Update Pagination UI
+      document.getElementById('paginationInfo').innerText = totalItems > 0 
+        ? `Showing ${startIndex + 1}-${endIndex} of ${totalItems}` 
+        : `Showing 0-0 of 0`;
+      document.getElementById('currentPageLabel').innerText = currentPage;
+      document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+      document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+    }
+
+    function onFilterChange() {
+      currentPage = 1;
+      renderTemplates();
+    }
+
+    function changePageSize() {
+      pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+      currentPage = 1;
+      renderTemplates();
+    }
+
+    function changePage(delta) {
+      currentPage += delta;
+      renderTemplates();
+    }
+
+    function toggleSelectAll(master) {
+      document.querySelectorAll(".row-checkbox").forEach(cb => cb.checked = master.checked);
+      updateSelection();
+    }
+
+    function updateSelection() {
+      const selected = document.querySelectorAll(".row-checkbox:checked").length;
+      const countElem = document.getElementById("selectedCount");
+      const deleteBtn = document.getElementById("bulkDeleteBtn");
+      
+      if (countElem) countElem.innerText = `${selected} selected`;
+      if (deleteBtn) deleteBtn.style.display = selected > 0 ? "inline-flex" : "none";
+    }
+
+    function bulkDelete() {
+      const checkedBoxes = document.querySelectorAll(".row-checkbox:checked");
+      const idsToDelete = Array.from(checkedBoxes).map(cb => cb.value);
+      templates = templates.filter(t => !idsToDelete.includes(t.id));
+      const selectAll = document.getElementById("selectAll");
+      if (selectAll) selectAll.checked = false;
+      renderTemplates();
+    }
+
+    function switchView(view) {
+      const gridView = document.getElementById('gridView');
+      const listView = document.getElementById('listView');
+      const gridBtn = document.getElementById('gridBtn');
+      const listBtn = document.getElementById('listBtn');
+
+      if (view === 'grid') {
+        gridView.style.display = 'grid';
+        listView.style.display = 'none';
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+      } else {
+        gridView.style.display = 'none';
+        listView.style.display = 'block';
+        listBtn.classList.add('active');
+        gridBtn.classList.remove('active');
+      }
+    }
+
+    function deleteTemplate(id) {
+      templates = templates.filter(t => t.id !== id);
+      renderTemplates();
+    }
+
+    function openModal() {
+      currentEditingId = null;
+      document.getElementById('modalTitle').textContent = 'Create New Template';
+      document.getElementById('modalName').value = '';
+      document.getElementById('modalType').value = 'Transactional';
+      handleTypeChange();
+      document.getElementById('modalContent').value = '';
+      document.getElementById('modalBtnCaption').value = '';
+      document.getElementById('templateModal').classList.add('active');
+      updateClock();
+    }
+
+    function editTemplate(id) {
+      const t = templates.find(item => item.id === id);
+      if (!t || t.type === 'Transactional') return;
+
+      currentEditingId = id;
+      document.getElementById('modalTitle').textContent = 'Edit Template';
+      document.getElementById('modalName').value = t.name;
+      document.getElementById('modalType').value = t.type;
+      
+      handleTypeChange();
+      
+      document.getElementById('modalCategory').value = t.category;
+      handleCategoryChange();
+
+      document.getElementById('modalContent').value = t.content || '';
+      if (t.buttonText) {
+        document.getElementById('modalBtnCaption').value = t.buttonText;
+      }
+      
+      document.getElementById('templateModal').classList.add('active');
+      updateClock();
+      updateLivePreview();
+    }
+
+    function closeModal() {
+      document.getElementById('templateModal').classList.remove('active');
+      currentEditingId = null;
+    }
+
+    /* Standalone Phone Preview */
+    function previewTemplate(id) {
+      const t = templates.find(item => item.id === id);
+      if (!t) return;
+
+      const modal = document.getElementById('phonePreviewModal');
+      modal.classList.add('active');
+      updateClock();
+
+      renderPhoneDisplay(modal, {
+        name: t.name,
+        content: t.content,
+        category: t.category,
+        mediaVal: t.media || '',
+        thumbnailVal: '',
+        btnText: t.buttonText || 'Натисни ме'
+      });
+    }
+
+    function closePhonePreview() {
+      document.getElementById('phonePreviewModal').classList.remove('active');
+    }
+
+    function handleTypeChange() {
+      const type = document.getElementById('modalType').value;
+      const categorySelect = document.getElementById('modalCategory');
+      
+      categorySelect.innerHTML = categoryOptions[type].map(cat => `<option value="${cat}">${cat}</option>`).join('');
+      handleCategoryChange();
+    }
+
+    function handleCategoryChange() {
+      const category = document.getElementById('modalCategory').value;
+
+      const isFile = category === 'File';
+      const isVideo = category.includes('Video');
+      const isImage = category.includes('Image');
+      const needsMedia = isFile || isVideo || isImage;
+      const needsButton = category.includes('Button');
+      const isImageOnly = category === 'Image Only';
+      const isVideoOnly = category === 'Video Only';
+
+      const needsText = !isImageOnly && !isVideoOnly;
+
+      document.getElementById('mediaGroup').classList.toggle('hidden', !needsMedia);
+      document.getElementById('thumbnailGroup').classList.toggle('hidden', !isVideo);
+      
+      document.getElementById('buttonCaptionGroup').classList.toggle('hidden', !needsButton);
+      document.getElementById('buttonActionGroup').classList.toggle('hidden', !needsButton);
+      
+      document.getElementById('contentGroup').classList.toggle('hidden', !needsText);
+      document.getElementById('placeholdersGroup').classList.toggle('hidden', !needsText);
+
+      updateLivePreview();
+    }
+
+    function insertPlaceholder(text) {
+      const area = document.getElementById('modalContent');
+      area.value += text;
+      updateLivePreview();
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      document.querySelectorAll('.phoneTime').forEach(el => el.textContent = timeStr);
+      document.querySelectorAll('.chatTime').forEach(el => el.textContent = timeStr);
+    }
+
+    function getFileIconClass(fileName) {
+      const ext = fileName.split('.').pop().toLowerCase();
+      if (ext === 'pdf') return 'fa-solid fa-file-pdf';
+      if (['doc', 'docx'].includes(ext)) return 'fa-solid fa-file-word';
+      if (['xls', 'xlsx'].includes(ext)) return 'fa-solid fa-file-excel';
+      if (['zip', 'rar'].includes(ext)) return 'fa-solid fa-file-zipper';
+      return 'fa-solid fa-file-lines';
+    }
+
+    function updateLivePreview() {
+      const scope = document.getElementById('templateModal');
+      renderPhoneDisplay(scope, {
+        name: document.getElementById('modalName').value.trim() || 'Business',
+        content: document.getElementById('modalContent').value,
+        category: document.getElementById('modalCategory').value,
+        mediaVal: document.getElementById('modalMedia').value,
+        thumbnailVal: document.getElementById('modalThumbnail').value,
+        btnText: document.getElementById('modalBtnCaption').value || 'Натисни ме'
+      });
+    }
+
+    function renderPhoneDisplay(container, data) {
+      container.querySelector('.previewPhoneTitle').textContent = data.name;
+
+      const textElem = container.querySelector('.previewText');
+      if (data.category === 'Image Only' || data.category === 'Video Only' || data.category === 'File') {
+        textElem.classList.add('hidden');
+      } else {
+        textElem.classList.remove('hidden');
+        textElem.textContent = data.content || 'Hit this is template';
+      }
+
+      container.querySelector('.previewFileCard').classList.add('hidden');
+      container.querySelector('.previewImageContainer').classList.add('hidden');
+      container.querySelector('.previewVideoContainer').classList.add('hidden');
+
+      if (data.category === 'File') {
+        const fileCard = container.querySelector('.previewFileCard');
+        const iconElem = container.querySelector('.fileIcon');
+        const nameElem = container.querySelector('.fileName');
+        
+        nameElem.textContent = data.mediaVal || 'Document.pdf';
+        iconElem.innerHTML = `<i class="${getFileIconClass(data.mediaVal || 'Document.pdf')}"></i>`;
+        fileCard.classList.remove('hidden');
+      } 
+      else if (data.category.includes('Video')) {
+        const videoContainer = container.querySelector('.previewVideoContainer');
+        const video = container.querySelector('.previewVideo');
+        
+        videoContainer.classList.remove('hidden');
+        video.src = "https://www.w3schools.com/html/mov_bbb.mp4";
+        
+        if (data.thumbnailVal && data.thumbnailVal.includes('Image_20933662')) {
+          video.poster = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400";
+        } else if (data.thumbnailVal) {
+          video.poster = data.thumbnailVal;
+        } else {
+          video.poster = "";
+        }
+      } 
+      else if (data.category.includes('Image') || data.category.includes('Text+Image')) {
+        const imgContainer = container.querySelector('.previewImageContainer');
+        const img = container.querySelector('.previewImage');
+        
+        imgContainer.classList.remove('hidden');
+        if (data.mediaVal && data.mediaVal.includes('Image_20933662')) {
+          img.src = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400";
+        } else if (data.mediaVal && data.mediaVal.startsWith('http')) {
+          img.src = data.mediaVal;
+        } else {
+          img.src = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400";
+        }
+      }
+
+      const btnPreview = container.querySelector('.previewButton');
+      if (data.category.includes('Button')) {
+        btnPreview.textContent = data.btnText;
+        btnPreview.classList.remove('hidden');
+      } else {
+        btnPreview.classList.add('hidden');
+      }
+    }
+
+    function saveTemplate() {
+      const name = document.getElementById('modalName').value.trim();
+      if (!name) {
+        alert('Please enter a template name.');
+        return;
+      }
+
+      if (currentEditingId) {
+        const t = templates.find(item => item.id === currentEditingId);
+        if (t) {
+          t.name = name;
+          t.type = document.getElementById('modalType').value;
+          t.category = document.getElementById('modalCategory').value;
+          t.content = document.getElementById('modalContent').value;
+          t.buttonText = document.getElementById('modalBtnCaption').value;
+        }
+      } else {
+        const newTemplate = {
+          id: Math.random().toString(36).substring(2, 6),
+          name: name,
+          type: document.getElementById('modalType').value,
+          category: document.getElementById('modalCategory').value,
+          status: 'Ready',
+          content: document.getElementById('modalContent').value,
+          buttonText: document.getElementById('modalBtnCaption').value,
+          created: new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+        };
+        templates.unshift(newTemplate);
+      }
+
+      renderTemplates();
+      closeModal();
+    }
+
+    // Initial load
+    renderTemplates();
+  </script>
+</body>
+</html>

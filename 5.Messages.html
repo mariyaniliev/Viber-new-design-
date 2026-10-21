@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSG PLS - Messages</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --color-purple: #6857d5;
+      --color-purple-hover: #5746be;
+      --color-purple-bg: rgba(104, 87, 213, 0.08);
+      --color-purple-badge: rgba(104, 87, 213, 0.15);
+
+      --danger: #ea5455;
+      --danger-light: #fceaea;
+      --success: #28c76f;
+      --success-light: #e8fadf;
+      --warning: #ff9f43;
+      
+      --text-dark: #1e1e1e;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --bg-light: #f8fafc;
+      --sidebar-width: 250px;
+      --sidebar-collapsed-width: 70px;
+      --header-height: 68px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { display: flex; background-color: #f4f5fa; color: var(--text-dark); min-height: 100vh; overflow: hidden; }
+
+    /* Collapsible Sidebar Navigation */
+    aside {
+      width: var(--sidebar-width);
+      background-color: #ffffff;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100vh;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    body.sidebar-collapsed aside { width: var(--sidebar-collapsed-width); }
+
+    .brand {
+      height: var(--header-height);
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      height: 38px;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      overflow: hidden;
+    }
+
+    .brand-logo-container img { height: 38px; width: auto; object-fit: contain; }
+    body.sidebar-collapsed .brand-logo-container { opacity: 0; visibility: hidden; }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--text-dark);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .hamburger-btn:hover { background-color: var(--color-purple-bg); color: var(--color-purple); }
+
+    .nav-list-wrapper { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 8px; }
+    .nav-list-wrapper::-webkit-scrollbar { width: 4px; }
+    .nav-list-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .nav-list { list-style: none; }
+    .nav-item {
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 500;
+      margin-bottom: 4px;
+      transition: background-color 0.2s, color 0.2s;
+      height: 44px;
+      position: relative;
+      text-decoration: none;
+    }
+    .nav-item i { font-size: 18px; min-width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-item span { transition: opacity 0.2s ease, visibility 0.2s ease; }
+    body.sidebar-collapsed .nav-item span { opacity: 0; visibility: hidden; }
+
+    .nav-item:hover { background-color: var(--bg-light); color: var(--text-dark); }
+    .nav-item.active { background-color: var(--color-purple-bg); color: var(--color-purple); font-weight: 600; }
+
+    /* Unread Messages Pulse Dot */
+    .unread-pulse-dot {
+      width: 9px;
+      height: 9px;
+      background-color: var(--danger);
+      border-radius: 50%;
+      position: absolute;
+      right: 14px;
+      box-shadow: 0 0 0 2px #ffffff;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(234, 84, 85, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0); }
+    }
+
+    .version-tag { 
+      padding: 16px 20px; 
+      font-size: 12px; 
+      color: var(--text-muted); 
+      border-top: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    /* Main Container */
+    main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative; }
+    
+    header {
+      background: #ffffff;
+      height: var(--header-height);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .user-profile { display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; }
+
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+      overflow: hidden;
+    }
+
+    /* Top Action Bar */
+    .page-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .page-title { font-size: 26px; font-weight: 700; }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-purple { background-color: var(--color-purple); color: #ffffff; }
+    .btn-purple:hover { background-color: var(--color-purple-hover); transform: translateY(-1px); }
+    .btn-outline { background-color: #ffffff; border-color: var(--border-color); color: var(--text-dark); }
+    .btn-outline:hover { background-color: var(--bg-light); border-color: #cbd5e1; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* Filters Card Header */
+    .filter-card {
+      background: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .floating-field {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .floating-field label {
+      position: absolute;
+      top: -9px;
+      left: 12px;
+      background: #ffffff;
+      padding: 0 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #64748b;
+      z-index: 2;
+    }
+
+    .floating-field.focused label { color: var(--color-purple); }
+
+    .form-control {
+      padding: 10px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      outline: none;
+      font-size: 13px;
+      background: #fff;
+      color: var(--text-dark);
+      transition: border-color 0.2s;
+    }
+    .form-control:focus { border-color: var(--color-purple); }
+
+    /* Unified filter-bar control sizing (matches 8.Campaign: 38px tall, 13px text) */
+    .filter-card .form-control {
+      height: 38px;
+      padding: 0 12px;
+      font-size: 13px;
+    }
+
+    .search-messages-input { width: 280px; }
+    .select-status { width: 180px; cursor: pointer; }
+    .select-type { width: 180px; cursor: pointer; }
+    .date-input { width: 140px; }
+
+    /* Table Container */
+    .table-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .table-toolbar {
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      background-color: #fafafa;
+    }
+
+    .toolbar-left-tools { display: flex; gap: 16px; font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .tool-btn { cursor: pointer; display: flex; align-items: center; gap: 6px; transition: color 0.2s; }
+    .tool-btn:hover { color: var(--color-purple); }
+
+    .table-scroll-container { flex: 1; overflow: auto; position: relative; }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+    th, td { padding: 14px 24px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+    
+    th {
+      position: sticky;
+      top: 0;
+      background-color: #f8fafc;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      z-index: 10;
+      box-shadow: 0 1px 0 var(--border-color);
+    }
+
+    tbody tr { cursor: pointer; transition: background-color 0.15s; }
+    tbody tr:hover { background-color: #f8fafc; }
+
+    /* Unread Row Styling */
+    tbody tr.row-unread {
+      background-color: rgba(104, 87, 213, 0.04);
+      font-weight: 600;
+    }
+    tbody tr.row-unread:hover {
+      background-color: rgba(104, 87, 213, 0.08);
+    }
+
+    .unread-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--color-purple);
+      font-size: 11px;
+      background: var(--color-purple-badge);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    /* Status Tags */
+    .status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-sent { color: #28c76f; }
+    .status-seen { color: var(--color-purple); }
+    .status-delivered { color: #00cfe8; }
+    .status-pending { color: var(--warning); }
+    .status-failed { color: var(--danger); }
+
+    .row-actions { display: flex; gap: 8px; }
+    .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 15px; padding: 4px; border-radius: 4px; }
+    .icon-btn:hover { color: var(--color-purple); background: var(--color-purple-bg); }
+
+    /* Pagination Footer */
+    .pagination-bar {
+      padding: 12px 24px;
+      border-top: 1px solid var(--border-color);
+      background-color: #ffffff;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 20px;
+      flex-shrink: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Slide-over Chat Drawer Panel */
+    .chat-drawer {
+      position: fixed;
+      top: 0; right: -480px; width: 460px; height: 100vh;
+      background: #ffffff;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.12);
+      z-index: 200;
+      transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-drawer.open { right: 0; }
+
+    .chat-drawer-header {
+      height: var(--header-height);
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+    }
+
+    .chat-user-info { display: flex; align-items: center; gap: 12px; }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--color-purple-bg); color: var(--color-purple);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 15px;
+    }
+
+    /* CHAT BODY UPDATES: Stacking messages Bottom-To-Top */
+    .chat-body {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background-color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end; /* Keeps messages aligned to bottom */
+    }
+
+    .chat-messages-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+    }
+
+    /* Distinct Dual Communication Bubble Styling */
+    .chat-bubble {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 13px;
+      line-height: 1.45;
+      position: relative;
+      word-break: break-word;
+    }
+
+    /* INCOMING / RECIPIENT BUBBLE (Different Color & Left Aligned) */
+    .chat-bubble.incoming {
+      background: #ffffff;
+      color: var(--text-dark);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-color);
+    }
+
+    /* OUTGOING / YOUR BUBBLE (Brand Purple & Right Aligned) */
+    .chat-bubble.outgoing {
+      background: var(--color-purple);
+      color: #ffffff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 2px 6px rgba(104, 87, 213, 0.25);
+    }
+
+    .chat-timestamp {
+      font-size: 10px;
+      margin-top: 4px;
+      opacity: 0.75;
+      text-align: right;
+    }
+
+    .chat-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-color);
+      background: #ffffff;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .chat-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      outline: none;
+      font-size: 13px;
+    }
+    .chat-input:focus { border-color: var(--color-purple); }
+
+    /* Modals Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-overlay.active { display: flex; }
+    
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      width: 650px;
+      max-width: 90%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; }
+    .modal-body { padding: 24px; overflow-y: auto; }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background-color: #fafafa;
+    }
+
+    /* Editor Toolbar */
+    .editor-toolbar {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-light);
+      border: 1px solid var(--border-color);
+      border-bottom: none;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      padding: 6px 10px;
+    }
+    .editor-btn {
+      background: none;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-dark);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .editor-btn:hover { background: #e2e8f0; }
+
+    .editor-textarea {
+      width: 100%;
+      height: 120px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      outline: none;
+      font-size: 13px;
+      resize: vertical;
+    }
+    .editor-textarea:focus { border-color: var(--color-purple); }
+
+    /* Phone Mockup Preview Component */
+    .phone-wrapper {
+      width: 300px;
+      height: 580px;
+      background: #111827;
+      border-radius: 40px;
+      padding: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-screen {
+      background: #ffffff;
+      flex: 1;
+      border-radius: 30px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-header {
+      padding: 14px 16px 10px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .phone-content {
+      flex: 1;
+      background: #f4f5fa;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .phone-bubble {
+      background: #e9e9eb;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      color: #000;
+      line-height: 1.4;
+      max-width: 85%;
+      margin-bottom: 6px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar">
+    <div class="brand">
+      <button class="hamburger-btn" id="sidebarToggle" onclick="toggleSidebar()" title="Toggle Menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="brand-logo-container">
+        <img src="logoNew.png" alt="MSG PLS Logo" />
+      </div>
+    </div>
+
+    <div class="nav-list-wrapper">
+      <ul class="nav-list">
+        <li><a class="nav-item" href="4.Dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+        <li>
+          <a class="nav-item active" href="5.Messages.html">
+            <i class="fa-solid fa-comments"></i>
+            <span>Messages</span>
+            <div class="unread-pulse-dot" id="sidebarUnreadDot" title="New unread replies"></div>
+          </a>
+        </li>
+        <li><a class="nav-item" href="6.template.html"><i class="fa-solid fa-layer-group"></i> <span>Templates</span></a></li>
+        <li><a class="nav-item" href="7.Recipients.html"><i class="fa-solid fa-users"></i> <span>Recipients</span></a></li>
+        <li><a class="nav-item" href="8.Campaign%20(not%20final%202).html"><i class="fa-solid fa-bullhorn"></i> <span>Campaigns</span></a></li>
+        <li><a class="nav-item" href="9.Automations%20(not%20final).html"><i class="fa-solid fa-robot"></i> <span>Automations</span></a></li>
+        <li><a class="nav-item" href="#" onclick="return false;" title="Coming soon"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+      </ul>
+    </div>
+
+    <div class="version-tag">
+      <span>v2.6.0</span>
+    </div>
+  </aside>
+
+  <!-- Main View -->
+  <main>
+    <header>
+      <div class="user-profile">
+        <i class="fa-solid fa-circle-user fa-lg" style="color: var(--color-purple)"></i> Business Account <i class="fa-solid fa-angle-down"></i>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <!-- Title Bar -->
+      <div class="page-title-row">
+        <h1 class="page-title">Messages</h1>
+        <button class="btn btn-purple" onclick="openCreateMessageModal()">
+          <i class="fa-solid fa-plus"></i> Create Message
+        </button>
+      </div>
+
+      <!-- Filter Controls -->
+      <div class="filter-card">
+        <div class="floating-field">
+          <input type="text" id="globalSearchInput" class="form-control search-messages-input" placeholder="Search messages..." oninput="applyFilters()" />
+        </div>
+
+        <div class="floating-field">
+          <label>Status</label>
+          <select id="statusFilter" class="form-control select-status" onchange="applyFilters()">
+            <option value="All">All</option>
+            <option value="Pending">Pending</option>
+            <option value="Sent">Sent</option>
+            <option value="Failed">Failed</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Seen">Seen</option>
+            <option value="Unread Reply">Unread Reply</option>
+          </select>
+        </div>
+
+        <div class="floating-field">
+          <label>Message Type</label>
+          <select id="typeFilter" class="form-control select-type" onchange="applyFilters()">
+            <option value="All">All</option>
+            <option value="Image Only">Image Only</option>
+            <option value="Text + Button">Text + Button</option>
+            <option value="Text + Image + Button">Text + Image + Button</option>
+            <option value="File">File</option>
+            <option value="Text Only">Text Only</option>
+            <option value="Video Only">Video Only</option>
+            <option value="Session">Session</option>
+          </select>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="date" class="form-control date-input" placeholder="Start Date" />
+          <span style="font-size: 12px; color: var(--text-muted);">to</span>
+          <input type="date" class="form-control date-input" placeholder="End Date" />
+        </div>
+      </div>
+
+      <!-- Main Messages Table Structure -->
+      <div class="table-card">
+        <div class="table-header-bar table-toolbar">
+          <div class="toolbar-left-tools">
+            <span class="tool-btn"><i class="fa-solid fa-table-columns"></i> Columns</span>
+            <span class="tool-btn"><i class="fa-solid fa-bars-staggered"></i> Density</span>
+            <span class="tool-btn"><i class="fa-solid fa-file-export"></i> Export</span>
+          </div>
+
+          <div>
+            <button class="btn btn-outline btn-sm" id="toggleSensitiveBtn" onclick="toggleSensitiveData()">
+              <i class="fa-solid fa-eye"></i> Show Sensitive Data
+            </button>
+          </div>
+        </div>
+
+        <div class="table-scroll-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Full Name</th>
+                <th>Phone</th>
+                <th>Message Type</th>
+                <th>Content</th>
+                <th>Campaign</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="messagesTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer -->
+        <div class="pagination-bar">
+          <span>Rows per page: </span>
+          <select class="form-control" style="padding: 4px 8px; font-size:12px;">
+            <option>25</option>
+            <option selected>50</option>
+          </select>
+          <span id="paginationText">1-7 of 7</span>
+          <div style="display:flex; gap:8px;">
+            <button class="icon-btn" disabled><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="icon-btn" disabled><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Slide-over Chat Drawer Panel -->
+  <div class="chat-drawer" id="chatDrawer">
+    <div class="chat-drawer-header">
+      <div class="chat-user-info">
+        <div class="avatar" id="chatAvatar">MS</div>
+        <div>
+          <h4 id="chatName" style="font-size:15px; font-weight:700;">Martin Sredkov</h4>
+          <span id="chatPhone" style="font-size:12px; color:var(--text-muted);">+359888801417</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <!-- Demo Tool: Trigger incoming response -->
+        <button class="btn btn-outline btn-sm" style="font-size:11px;" onclick="simulateIncomingReply()" title="Simulate recipient replying">
+          <i class="fa-solid fa-reply"></i> Test Reply
+        </button>
+        <button class="icon-btn" onclick="closeChatDrawer()"><i class="fa-solid fa-xmark fa-lg"></i></button>
+      </div>
+    </div>
+
+    <!-- Scroll Container for Chat Messages -->
+    <div class="chat-body" id="chatBody">
+      <div class="chat-messages-inner" id="chatMessagesBox"></div>
+    </div>
+
+    <div class="chat-footer">
+      <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." onkeydown="handleChatKeyDown(event)" />
+      <button class="btn btn-purple" style="border-radius:50%; width:40px; height:40px; padding:0; justify-content:center;" onclick="sendChatMessage()">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: Create New Message -->
+  <div class="modal-overlay" id="createMessageModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Message</h3>
+        <button class="icon-btn" onclick="closeModal('createMessageModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div style="margin-bottom: 20px;">
+          <select id="recipientSelect" class="form-control" style="width: 100%; padding: 12px;">
+            <option value="" disabled selected>Select Recipient</option>
+            <option value="Martin Sredkov">Martin Sredkov (+359888801417)</option>
+            <option value="Mariyan Iliev">Mariyan Iliev (+359888807180)</option>
+            <option value="Daniel Stoyanov">Daniel Stoyanov (+359888802188)</option>
+            <option value="Nati Trifonova">Nati Trifonova (+359888807658)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <div class="editor-toolbar">
+            <button class="editor-btn" type="button"><i class="fa-solid fa-bold"></i></button>
+            <button class="editor-btn" type="button"><i class="fa-solid fa-italic"></i></button>
+            <button class="editor-btn" type="button"><i class="fa-solid fa-align-left"></i></button>
+            <button class="editor-btn" type="button"><i class="fa-solid fa-code"></i></button>
+          </div>
+          <textarea id="composerContent" class="editor-textarea" placeholder="Message Content" oninput="syncPreviewText()"></textarea>
+        </div>
+
+        <button class="btn btn-outline btn-sm" onclick="openPreviewModal()">
+          <i class="fa-solid fa-eye"></i> Show Preview
+        </button>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('createMessageModal')">Cancel</button>
+        <button class="btn btn-purple" onclick="dispatchDirectMessage()">Send Message</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Mobile Live Device Preview -->
+  <div class="modal-overlay" id="previewModal">
+    <div class="modal" style="width: 380px; background: transparent; box-shadow: none;">
+      <div style="text-align: right; margin-bottom: 10px;">
+        <button class="btn btn-outline" style="background:#fff;" onclick="closeModal('previewModal')"><i class="fa-solid fa-xmark"></i> Close Preview</button>
+      </div>
+      <div class="phone-wrapper">
+        <div class="phone-screen">
+          <div class="phone-header">
+            <i class="fa-solid fa-chevron-left"></i>
+            <span>Business</span>
+            <div style="display:flex; gap:10px; color:var(--color-purple);">
+              <i class="fa-solid fa-store"></i>
+              <i class="fa-solid fa-circle-info"></i>
+            </div>
+          </div>
+          <div class="phone-content">
+            <div class="phone-bubble" id="phonePreviewText">
+              Your message will appear here...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State Mock
+    let showSensitive = false;
+    let activeChatRowId = null;
+
+    let messageRecords = [
+      {
+        id: 1,
+        dateTime: "2026-07-23 16:54:40",
+        fullName: "Martin Sredkov",
+        phone: "+359888801417",
+        maskedPhone: "••••••••1417",
+        type: "Text + Image + Button",
+        content: "Hello {{first_name}} {{last_name}} your special offer is ready!",
+        campaign: "23.07.26 - 16:55",
+        status: "Unread Reply",
+        hasUnread: true,
+        chatHistory: [
+          { sender: 'out', text: 'Hello Martin, your special offer is ready!', time: '16:54' },
+          { sender: 'in', text: 'Hi! Thanks for the offer. Is this valid until Friday?', time: '16:58' }
+        ]
+      },
+      {
+        id: 2,
+        dateTime: "2026-07-23 16:54:40",
+        fullName: "Mariyan Iliev",
+        phone: "+359888807180",
+        maskedPhone: "••••••••7180",
+        type: "Text + Image + Button",
+        content: "Hello {{first_name}} {{last_name}} checkout campaign",
+        campaign: "23.07.26 - 16:55",
+        status: "Sent",
+        hasUnread: false,
+        chatHistory: [
+          { sender: 'out', text: 'Hello Mariyan checkout campaign', time: '16:54' },
+          { sender: 'in', text: 'Looks good, checking now!', time: '17:02' }
+        ]
+      },
+      {
+        id: 3,
+        dateTime: "2026-07-23 16:54:40",
+        fullName: "Daniel Stoyanov",
+        phone: "+359888802188",
+        maskedPhone: "••••••••2188",
+        type: "Text + Image + Button",
+        content: "Hello {{first_name}} {{last_name}} system update",
+        campaign: "23.07.26 - 16:55",
+        status: "Sent",
+        hasUnread: false,
+        chatHistory: [
+          { sender: 'out', text: 'Hello Daniel system update', time: '16:54' }
+        ]
+      },
+      {
+        id: 4,
+        dateTime: "2026-07-23 10:52:12",
+        fullName: "Martin Sredkov",
+        phone: "+359888801417",
+        maskedPhone: "••••••••1417",
+        type: "Text + Image + Button",
+        content: "Hello {{first_name}} {{last_name}} follow up details",
+        campaign: "23.07.26-10:50",
+        status: "Seen",
+        hasUnread: false,
+        chatHistory: [
+          { sender: 'out', text: 'Hello Martin follow up details', time: '10:52' }
+        ]
+      },
+      {
+        id: 5,
+        dateTime: "2026-07-22 23:24:36",
+        fullName: "Nati Trifonova",
+        phone: "+359888807658",
+        maskedPhone: "••••••••7658",
+        type: "Text + Image + Button",
+        content: "Hello {{first_name}} {{last_name}} special offer promo",
+        campaign: "Spam 1",
+        status: "Delivered",
+        hasUnread: false,
+        chatHistory: [
+          { sender: 'out', text: 'Hello Nati special offer promo', time: '23:24' }
+        ]
+      },
+      {
+        id: 6,
+        dateTime: "2026-07-15 13:45:30",
+        fullName: "Unknown Unknown",
+        phone: "+359888802137",
+        maskedPhone: "••••••••2137",
+        type: "Text Only",
+        content: "Напомняне от Luminera Зъболекарски преглед",
+        campaign: "Client Direct Messages",
+        status: "Seen",
+        hasUnread: false,
+        chatHistory: [
+          { sender: 'out', text: 'Напомняне от Luminera Зъболекарски преглед', time: '13:45' }
+        ]
+      },
+      {
+        id: 7,
+        dateTime: "2026-07-15 13:16:02",
+        fullName: "Unknown Unknown",
+        phone: "+359888802137",
+        maskedPhone: "••••••••2137",
+        type: "Text Only",
+        content: "Hello from viber",
+        campaign: "Client Direct Messages",
+        status: "Seen",
+        hasUnread: false,
+        chatHistory: [
+          { sender: 'out', text: 'Hello from viber', time: '13:16' }
+        ]
+      }
+    ];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      applyFilters();
+    });
+
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-collapsed');
+    }
+
+    /* Global Search & Multi-Column Filtering */
+    function applyFilters() {
+      const q = document.getElementById('globalSearchInput').value.trim().toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      const type = document.getElementById('typeFilter').value;
+
+      const filtered = messageRecords.filter(rec => {
+        const matchesQuery = 
+          rec.dateTime.toLowerCase().includes(q) ||
+          rec.fullName.toLowerCase().includes(q) ||
+          rec.phone.toLowerCase().includes(q) ||
+          rec.type.toLowerCase().includes(q) ||
+          rec.content.toLowerCase().includes(q) ||
+          rec.campaign.toLowerCase().includes(q) ||
+          rec.status.toLowerCase().includes(q);
+
+        const matchesStatus = (status === 'All') || (status === 'Unread Reply' ? rec.hasUnread : rec.status === status);
+        const matchesType = (type === 'All') || (rec.type === type);
+
+        return matchesQuery && matchesStatus && matchesType;
+      });
+
+      // Sort unread messages to top
+      filtered.sort((a, b) => (b.hasUnread ? 1 : 0) - (a.hasUnread ? 1 : 0));
+
+      renderTable(filtered);
+      checkSidebarUnreadStatus();
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('messagesTableBody');
+      tbody.innerHTML = '';
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">No messages found matching criteria.</td></tr>`;
+        return;
+      }
+
+      data.forEach(rec => {
+        const tr = document.createElement('tr');
+        if (rec.hasUnread) tr.classList.add('row-unread');
+
+        let statusClass = 'status-sent';
+        let statusIcon = 'fa-paper-plane';
+
+        if (rec.hasUnread) {
+          statusClass = 'status-seen';
+          statusIcon = 'fa-circle';
+        } else if (rec.status === 'Seen') {
+          statusClass = 'status-seen';
+          statusIcon = 'fa-eye';
+        } else if (rec.status === 'Delivered') {
+          statusClass = 'status-delivered';
+          statusIcon = 'fa-circle-check';
+        }
+
+        tr.onclick = () => openChatDrawer(rec.id);
+
+        tr.innerHTML = `
+          <td>${rec.dateTime}</td>
+          <td style="font-weight:600;">${rec.fullName}</td>
+          <td>${showSensitive ? rec.phone : rec.maskedPhone}</td>
+          <td>${rec.type}</td>
+          <td style="max-width: 260px; overflow: hidden; text-overflow: ellipsis;">${rec.content}</td>
+          <td>${rec.campaign}</td>
+          <td>
+            <span class="status-tag ${statusClass}">
+              <i class="fa-solid ${statusIcon}"></i> ${rec.hasUnread ? 'New Reply' : rec.status}
+            </span>
+            ${rec.hasUnread ? `<span class="unread-badge">NEW</span>` : ''}
+          </td>
+          <td style="text-align: right;" onclick="event.stopPropagation()">
+            <div class="row-actions" style="justify-content: flex-end;">
+              <button class="icon-btn" title="View Details"><i class="fa-solid fa-eye"></i></button>
+              <button class="icon-btn" title="Open Chat Window" onclick="openChatDrawer(${rec.id})"><i class="fa-solid fa-comment-dots"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('paginationText').innerText = `1-${data.length} of ${data.length}`;
+    }
+
+    function toggleSensitiveData() {
+      showSensitive = !showSensitive;
+      const btn = document.getElementById('toggleSensitiveBtn');
+      btn.innerHTML = showSensitive 
+        ? `<i class="fa-solid fa-eye-slash"></i> Hide Sensitive Data`
+        : `<i class="fa-solid fa-eye"></i> Show Sensitive Data`;
+      applyFilters();
+    }
+
+    function checkSidebarUnreadStatus() {
+      const hasAnyUnread = messageRecords.some(r => r.hasUnread);
+      const dot = document.getElementById('sidebarUnreadDot');
+      dot.style.display = hasAnyUnread ? 'block' : 'none';
+    }
+
+    /* Chat Drawer & Messaging Functions */
+    function openChatDrawer(id) {
+      activeChatRowId = id;
+      const rec = messageRecords.find(r => r.id === id);
+      if (!rec) return;
+
+      // Clear unread flag
+      if (rec.hasUnread) {
+        rec.hasUnread = false;
+        if (rec.status === 'Unread Reply') rec.status = 'Seen';
+        applyFilters();
+      }
+
+      document.getElementById('chatName').innerText = rec.fullName;
+      document.getElementById('chatPhone').innerText = showSensitive ? rec.phone : rec.maskedPhone;
+      document.getElementById('chatAvatar').innerText = rec.fullName.split(' ').map(n => n[0]).join('');
+
+      renderChatMessages(rec.chatHistory);
+      document.getElementById('chatDrawer').classList.add('open');
+    }
+
+    function closeChatDrawer() {
+      document.getElementById('chatDrawer').classList.remove('open');
+      activeChatRowId = null;
+    }
+
+    function renderChatMessages(history) {
+      const box = document.getElementById('chatMessagesBox');
+      box.innerHTML = '';
+
+      history.forEach(msg => {
+        const bubble = document.createElement('div');
+        // Dual styling: 'outgoing' (purple right) vs 'incoming' (white/grey left)
+        bubble.className = `chat-bubble ${msg.sender === 'out' ? 'outgoing' : 'incoming'}`;
+        bubble.innerHTML = `
+          <div>${msg.text}</div>
+          <div class="chat-timestamp">${msg.time}</div>
+        `;
+        box.appendChild(bubble);
+      });
+
+      // Ensure scroll focuses on bottom
+      const bodyContainer = document.getElementById('chatBody');
+      bodyContainer.scrollTop = bodyContainer.scrollHeight;
+    }
+
+    function handleChatKeyDown(e) {
+      if (e.key === 'Enter') sendChatMessage();
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text || !activeChatRowId) return;
+
+      const rec = messageRecords.find(r => r.id === activeChatRowId);
+      if (rec) {
+        const now = new Date();
+        const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        rec.chatHistory.push({ sender: 'out', text: text, time: timeStr });
+        renderChatMessages(rec.chatHistory);
+        input.value = '';
+      }
+    }
+
+    // Helper to simulate incoming dual communication from participants
+    function simulateIncomingReply() {
+      if (!activeChatRowId) return;
+      const rec = messageRecords.find(r => r.id === activeChatRowId);
+      if (rec) {
+        const now = new Date();
+        const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+        const mockReplies = [
+          "Thank you, I received your message!",
+          "Could you give me more details about this?",
+          "Awesome! I would like to proceed.",
+          "Can you stop sending me notifications?"
+        ];
+        const randomReply = mockReplies[Math.floor(Math.random() * mockReplies.length)];
+
+        rec.chatHistory.push({ sender: 'in', text: randomReply, time: timeStr });
+        renderChatMessages(rec.chatHistory);
+      }
+    }
+
+    /* Modal Utility Handlers */
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function openCreateMessageModal() { openModal('createMessageModal'); }
+
+    function openPreviewModal() {
+      syncPreviewText();
+      openModal('previewModal');
+    }
+
+    function syncPreviewText() {
+      const content = document.getElementById('composerContent').value.trim();
+      document.getElementById('phonePreviewText').innerText = content || "Your message will appear here...";
+    }
+
+    function dispatchDirectMessage() {
+      const recipient = document.getElementById('recipientSelect').value;
+      const content = document.getElementById('composerContent').value.trim();
+
+      if (!recipient || !content) {
+        alert('Please choose a recipient and enter message content.');
+        return;
+      }
+
+      const newMsg = {
+        id: Date.now(),
+        dateTime: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        fullName: recipient,
+        phone: "+359888800000",
+        maskedPhone: "••••••••0000",
+        type: "Text Only",
+        content: content,
+        campaign: "Direct Communication",
+        status: "Sent",
+        hasUnread: false,
+        chatHistory: [{ sender: 'out', text: content, time: 'Now' }]
+      };
+
+      messageRecords.unshift(newMsg);
+      closeModal('createMessageModal');
+      document.getElementById('composerContent').value = '';
+      applyFilters();
+    }
+  </script>
+</body>
+</html>

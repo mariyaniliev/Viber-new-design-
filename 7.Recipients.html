@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSG PLS - Recipients</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      /* Unified Brand Color Palette */
+      --color-purple: #6857d5;
+      --color-purple-hover: #5746be;
+      --color-purple-bg: rgba(104, 87, 213, 0.12);
+
+      --danger: #ea5455;
+      --danger-light: #fceaea;
+      --text-dark: #1e1e1e;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --bg-light: #f8fafc;
+      --sidebar-width: 250px;
+      --sidebar-collapsed-width: 70px;
+      --header-height: 68px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { display: flex; background-color: #f4f5fa; color: var(--text-dark); min-height: 100vh; overflow: hidden; }
+
+    /* Animated Collapsible Sidebar Navigation */
+    aside {
+      width: var(--sidebar-width);
+      background-color: #ffffff;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100vh;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    /* Collapsed Sidebar State */
+    body.sidebar-collapsed aside {
+      width: var(--sidebar-collapsed-width);
+    }
+
+    /* Brand Header in Sidebar */
+    .brand {
+      height: var(--header-height);
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      height: 38px;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      overflow: hidden;
+    }
+
+    .brand-logo-container img {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    body.sidebar-collapsed .brand-logo-container {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--text-dark);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .hamburger-btn:hover {
+      background-color: var(--color-purple-bg);
+      color: var(--color-purple);
+    }
+
+    /* Scrollable Menu Items Area */
+    .nav-list-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px 8px;
+    }
+
+    .nav-list-wrapper::-webkit-scrollbar { width: 4px; }
+    .nav-list-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .nav-list { list-style: none; }
+    .nav-item {
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 500;
+      margin-bottom: 4px;
+      transition: background-color 0.2s, color 0.2s;
+      height: 44px;
+      text-decoration: none;
+      position: relative;
+    }
+    .nav-item i {
+      font-size: 18px;
+      min-width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .nav-item span {
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    body.sidebar-collapsed .nav-item span {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .nav-item:hover { background-color: var(--bg-light); color: var(--text-dark); }
+    .nav-item.active { background-color: var(--color-purple-bg); color: var(--color-purple); font-weight: 600; }
+
+    /* Unread Messages Pulse Dot */
+    .unread-pulse-dot {
+      width: 9px;
+      height: 9px;
+      background-color: var(--danger);
+      border-radius: 50%;
+      position: absolute;
+      right: 14px;
+      box-shadow: 0 0 0 2px #ffffff;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(234, 84, 85, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0); }
+    }
+
+
+    .version-tag { 
+      padding: 16px 20px; 
+      font-size: 12px; 
+      color: var(--text-muted); 
+      border-top: 1px solid var(--border-color);
+      flex-shrink: 0;
+      transition: opacity 0.2s ease;
+    }
+    body.sidebar-collapsed .version-tag span {
+      display: none;
+    }
+
+    /* Main Container Area */
+    main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    
+    /* Top Header Bar */
+    header {
+      background: #ffffff;
+      height: var(--header-height);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+
+    .user-profile { display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; }
+    
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+      overflow: hidden;
+    }
+
+    /* Sticky Top Controls Block */
+    .sticky-top-block {
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      background-color: #f4f5fa;
+      padding-bottom: 16px;
+      flex-shrink: 0;
+    }
+
+    .page-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .page-title { font-size: 26px; font-weight: 700; }
+    .action-group { display: flex; gap: 12px; }
+
+    /* UNIFIED CLEAN BUTTON STYLES */
+    .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .btn-purple { 
+      background-color: var(--color-purple); 
+      color: #ffffff; 
+    }
+    .btn-purple:hover { 
+      background-color: var(--color-purple-hover); 
+      transform: translateY(-1px); 
+    }
+
+    .btn-outline { 
+      background-color: #ffffff; 
+      border-color: var(--border-color); 
+      color: var(--text-dark); 
+    }
+    .btn-outline:hover { 
+      background-color: var(--bg-light); 
+      border-color: #cbd5e1; 
+      transform: translateY(-1px); 
+    }
+
+    .btn-danger { 
+      background-color: var(--danger-light); 
+      color: var(--danger); 
+    }
+    .btn-danger:hover { 
+      background-color: var(--danger); 
+      color: #ffffff; 
+    }
+
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* Search Input Card */
+    .filter-card {
+      background: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      flex-wrap: wrap;
+    }
+    /* width stays flexible; height matched to the other pages */
+    .search-input { flex: 1; height: 38px; padding: 0 12px; font-size: 13px; border: 1px solid var(--border-color); border-radius: 8px; outline: none; }
+    .search-input:focus { border-color: var(--color-purple); }
+
+    /* Table Container Card */
+    .table-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .table-header-bar {
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      background-color: #fafafa;
+      height: 58px;
+      flex-shrink: 0;
+    }
+    .table-header-left { display: flex; align-items: center; gap: 16px; min-height: 34px; }
+    
+    #bulkDeleteBtn {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    #bulkDeleteBtn.visible { opacity: 1; visibility: visible; pointer-events: auto; }
+
+    /* Dynamic Horizontal & Vertical Scroll Area */
+    .table-scroll-container {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+    th, td { padding: 14px 24px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+    
+    /* Sticky Table Header */
+    th {
+      position: sticky;
+      top: 0;
+      background-color: #f8fafc;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      z-index: 10;
+      box-shadow: 0 1px 0 var(--border-color);
+    }
+
+    tbody tr:hover { background-color: #f8fafc; }
+
+    .row-actions { visibility: hidden; display: flex; gap: 12px; }
+    tbody tr:hover .row-actions { visibility: visible; }
+    .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 15px; }
+    .icon-btn:hover { color: var(--color-purple); }
+
+    .tag {
+      background: var(--color-purple-bg);
+      color: var(--color-purple);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    /* Pagination Footer Bar */
+    .pagination-bar {
+      padding: 12px 24px;
+      border-top: 1px solid var(--border-color);
+      background-color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .pagination-controls { display: flex; align-items: center; gap: 12px; }
+    .page-select {
+      padding: 6px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      outline: none;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    /* Modals Layout */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      width: 600px;
+      max-width: 90%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .modal-xl { width: 1100px; max-width: 95%; }
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; }
+    .modal-body { padding: 24px; overflow-y: auto; flex-grow: 1; }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background-color: #fafafa;
+      flex-shrink: 0;
+    }
+
+    /* Tabs Component */
+    .tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; }
+    .tab {
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tab.active { color: var(--color-purple); border-color: var(--color-purple); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Form Fields */
+    .grid-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+    .grid-input.has-error { border-color: var(--danger); background-color: var(--danger-light); }
+    .error-badge { display: block; font-size: 11px; color: var(--danger); font-weight: 600; margin-top: 4px; }
+
+    /* Autocomplete Tag Input Component */
+    .tag-autocomplete-wrapper {
+      position: relative;
+      width: 100%;
+      min-width: 260px;
+    }
+    .tag-input-box {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 8px;
+      min-height: 42px;
+      background: #fff;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      cursor: text;
+      width: 100%;
+      max-width: 100%;
+    }
+    .tag-input-box:focus-within {
+      border-color: var(--color-purple);
+      box-shadow: 0 0 0 2px var(--color-purple-bg);
+    }
+    .tag-badge {
+      background: var(--color-purple-bg);
+      color: var(--color-purple);
+      padding: 3px 8px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      word-break: break-all;
+    }
+    .tag-badge i { cursor: pointer; }
+    .tag-badge i:hover { color: var(--danger); }
+    .tag-search-field {
+      border: none;
+      outline: none;
+      flex: 1;
+      min-width: 100px;
+      font-size: 13px;
+      padding: 4px;
+    }
+
+    /* Floating Dropdown Menu */
+    .tag-dropdown-menu {
+      position: fixed;
+      max-height: 200px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+      z-index: 999999;
+      display: none;
+    }
+    .tag-dropdown-menu.show { display: block; }
+    .tag-dropdown-option {
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tag-dropdown-option:hover { background-color: var(--color-purple-bg); color: var(--color-purple); }
+    .tag-dropdown-empty { padding: 10px; font-size: 12px; color: var(--text-muted); text-align: center; }
+
+    /* Draggable Column Item Styles & Hint Animation */
+    @keyframes dragHint {
+      0%   { transform: translateY(0); }
+      25%  { transform: translateY(-4px); }
+      50%  { transform: translateY(4px); }
+      75%  { transform: translateY(-2px); }
+      100% { transform: translateY(0); }
+    }
+
+    .column-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg-light);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: grab;
+      user-select: none;
+      transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+
+    .column-item:active {
+      cursor: grabbing;
+    }
+
+    .column-item.dragging {
+      opacity: 0.4;
+      background: #ffffff;
+      border: 2px dashed var(--color-purple);
+    }
+
+    .column-item.animate-drag-hint {
+      animation: dragHint 0.8s ease-in-out 0.2s 1;
+    }
+
+    .drag-handle {
+      cursor: grab;
+      color: var(--text-muted);
+      margin-right: 12px;
+      font-size: 14px;
+    }
+
+    .column-item-controls { display: flex; gap: 8px; align-items: center; }
+
+    /* Fixed height scrollable tag container */
+    .tags-scroll-container {
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-light);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-content: flex-start;
+    }
+
+    .tags-scroll-container::-webkit-scrollbar { width: 6px; }
+    .tags-scroll-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .badge-fixed { font-size: 11px; background: #e2e8f0; padding: 2px 8px; border-radius: 4px; color: var(--text-muted); }
+    .info-box { background: var(--color-purple-bg); border: 1px solid rgba(104, 87, 213, 0.3); padding: 12px 16px; border-radius: 8px; font-size: 13px; color: var(--color-purple); margin-bottom: 16px; }
+    .warning-box { background: #fff5f5; border: 1px solid #feb2b2; padding: 14px 18px; border-radius: 8px; font-size: 13px; color: #c53030; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Container -->
+  <aside id="sidebar">
+    <div class="brand">
+      <button class="hamburger-btn" id="sidebarToggle" onclick="toggleSidebar()" title="Toggle Menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      
+      <!-- Logo Image File Integration -->
+      <div class="brand-logo-container">
+        <img src="logoNew.png" alt="MSG PLS Logo" />
+      </div>
+    </div>
+
+    <!-- Scrollable Navigation Area -->
+    <div class="nav-list-wrapper">
+      <ul class="nav-list">
+        <li><a class="nav-item" href="4.Dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+        <li>
+          <a class="nav-item" href="5.Messages.html">
+            <i class="fa-solid fa-comments"></i>
+            <span>Messages</span>
+            <div class="unread-pulse-dot" id="sidebarUnreadDot" title="New unread replies"></div>
+          </a>
+        </li>
+        <li><a class="nav-item" href="6.template.html"><i class="fa-solid fa-layer-group"></i> <span>Templates</span></a></li>
+        <li><a class="nav-item active" href="7.Recipients.html"><i class="fa-solid fa-users"></i> <span>Recipients</span></a></li>
+        <li><a class="nav-item" href="8.Campaign%20(not%20final%202).html"><i class="fa-solid fa-bullhorn"></i> <span>Campaigns</span></a></li>
+        <li><a class="nav-item" href="9.Automations%20(not%20final).html"><i class="fa-solid fa-robot"></i> <span>Automations</span></a></li>
+        <li><a class="nav-item" href="#" onclick="return false;" title="Coming soon"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+      </ul>
+    </div>
+
+    <div class="version-tag">
+      <span>v2.6.0</span>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <main>
+    <!-- Top Header Bar -->
+    <header>
+      <div class="user-profile">
+        <i class="fa-solid fa-circle-user fa-lg" style="color: var(--color-purple)"></i> Business Account <i class="fa-solid fa-angle-down"></i>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <!-- Sticky Top Controls -->
+      <div class="sticky-top-block">
+        <div class="page-title-row">
+          <h1 class="page-title">Recipients</h1>
+          
+          <!-- Clean Action Buttons -->
+          <div class="action-group">
+            <button class="btn btn-outline" onclick="openModal('manageModal')">
+              <i class="fa-solid fa-sliders"></i> Manage Fields & Tags
+            </button>
+            <button class="btn btn-outline" onclick="openModal('importModal')">
+              <i class="fa-solid fa-file-import"></i> Import
+            </button>
+            <button class="btn btn-purple" onclick="openAddRecipientModal()">
+              <i class="fa-solid fa-plus"></i> Add Recipient
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-card">
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by recipient name or phone..." oninput="handleSearch()" />
+        </div>
+      </div>
+
+      <!-- Table Container Card -->
+      <div class="table-card">
+        <div class="table-header-bar">
+          <div class="table-header-left">
+            <span id="selectedCount" style="font-size: 14px; color: var(--text-muted); min-width: 80px;">0 selected</span>
+            <button id="bulkDeleteBtn" class="btn btn-danger btn-sm" onclick="bulkDelete()">
+              <i class="fa-solid fa-trash"></i> Delete Selected
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Overflow Table Box -->
+        <div class="table-scroll-container">
+          <table id="mainTable">
+            <thead>
+              <tr id="tableHeaderRow"></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Bar -->
+        <div class="pagination-bar">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span>Rows per page:</span>
+            <select class="page-select" id="pageSizeSelect" onchange="changePageSize(this.value)">
+              <option value="20">20</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+
+          <div class="pagination-controls">
+            <span id="paginationInfo">Showing 1-50 of 50</span>
+            <button class="btn btn-outline btn-sm" id="prevPageBtn" onclick="prevPage()"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="btn btn-outline btn-sm" id="nextPageBtn" onclick="nextPage()"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL 1: Manage Fields & Tags -->
+  <div class="modal-overlay" id="manageModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Manage Fields & Tags</h3>
+        <button class="icon-btn" onclick="closeModal('manageModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab('columnsTab', this)">Columns / Fields</div>
+          <div class="tab" onclick="switchTab('tagsTab', this)">Tags</div>
+        </div>
+
+        <div id="columnsTab" class="tab-content active">
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+            Drag and drop items to reorder columns.
+          </p>
+          <div id="columnsList"></div>
+          <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <input type="text" id="newColumnInput" class="grid-input" style="padding: 10px;" placeholder="New Field Name (e.g. Country)" />
+            <button class="btn btn-purple" onclick="addNewColumn()"><i class="fa-solid fa-plus"></i> Add</button>
+          </div>
+        </div>
+
+        <div id="tagsTab" class="tab-content">
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Add and manage active system-wide tags.</p>
+          <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <input type="text" id="newTagInput" class="grid-input" style="padding: 10px;" placeholder="New Tag Name (e.g. VIP)" />
+            <button class="btn btn-purple" onclick="addNewTag()"><i class="fa-solid fa-plus"></i> Add Tag</button>
+          </div>
+
+          <label style="font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block;">Active System Tags</label>
+          <!-- Fixed height container for overflow scroll -->
+          <div id="tagsList" class="tags-scroll-container"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-purple" onclick="closeModal('manageModal')">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Import CSV -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Import Recipients</h3>
+        <button class="icon-btn" onclick="closeModal('importModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="info-box"><i class="fa-solid fa-circle-info"></i> Supports auto-growing vertical fields and tag mappings.</div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button class="btn btn-outline" style="justify-content: center;" onclick="alert('Downloading template...')">
+            <i class="fa-solid fa-download"></i> Download CSV Template
+          </button>
+          <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;" />
+          <button class="btn btn-purple" style="justify-content: center;" onclick="simulateImport(0)">
+            <i class="fa-solid fa-upload"></i> Import CSV (Success)
+          </button>
+          <button class="btn btn-outline" style="justify-content: center;" onclick="simulateImport(3)">
+            <i class="fa-solid fa-bug"></i> Simulate Import with 3 Failed Records
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Failed Import Resolution -->
+  <div class="modal-overlay" id="failedModal">
+    <div class="modal modal-xl">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" style="color: var(--danger);">
+            <i class="fa-solid fa-circle-exclamation"></i> Import Data Resolution
+          </h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Fix phone numbers or pick active tags directly upfront.</p>
+        </div>
+        <button class="icon-btn" onclick="closeModal('failedModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="warning-box">
+          <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
+          <div><strong id="failedCountText">3 records require attention.</strong></div>
+        </div>
+
+        <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+          <table>
+            <thead>
+              <tr id="failedTableHeader"></tr>
+            </thead>
+            <tbody id="failedTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('failedModal')">Discard Failed Records</button>
+        <button class="btn btn-purple" onclick="resolveAllFailedRecords()">
+          <i class="fa-solid fa-check"></i> Upload Corrected Records
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Dynamic Add Recipient -->
+  <div class="modal-overlay" id="addRecipientModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Recipient</h3>
+        <button class="icon-btn" onclick="closeModal('addRecipientModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="dynamicAddForm"></form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('addRecipientModal')">Cancel</button>
+        <button class="btn btn-purple" onclick="saveRecipient()">Save Recipient</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: Edit Recipient -->
+  <div class="modal-overlay" id="editRecipientModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Recipient</h3>
+        <button class="icon-btn" onclick="closeModal('editRecipientModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="dynamicEditForm"></form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('editRecipientModal')">Cancel</button>
+        <button class="btn btn-purple" onclick="updateRecipient()">Update Recipient</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // System State
+    let columns = [
+      { id: 'name', label: 'Name', isFixed: false },
+      { id: 'phone', label: 'Phone', isFixed: true, required: true },
+      { id: 'tags', label: 'Tags', isFixed: true, isTagField: true },
+    ];
+
+    let tags = [
+      "VIP", "Promo", "Newsletter", "Loyalty", "Black Friday", "High Spender", 
+      "Bulgaria", "Greece", "Romania", "Lead 2026", "Partner", "B2B", "Retail", 
+      "App User", "Inactive", "Churn Risk", "Subscriber", "VIP Gold", "Trial", "Beta Tester"
+    ];
+
+    // Generate sample recipients
+    let recipients = [];
+    const firstNames = ["Viktoria", "Petar", "Ivan", "Maria", "Stefan", "Elena", "Dimitar", "Nikolay", "Gergana", "Alexander", "Kristina", "Georgi", "Desislava", "Martin"];
+    const lastNames = ["Hristova", "Vasilev", "Alexiev", "Georgieva", "Tsanev", "Popova", "Berbatov", "Ivanov", "Dimitrova", "Petrov", "Stoyanova", "Kolev", "Todorova"];
+    
+    for (let i = 1; i <= 50; i++) {
+      const fName = firstNames[i % firstNames.length];
+      const lName = lastNames[i % lastNames.length];
+      const randomTagsCount = (i % 4) + 1;
+      const recTags = [];
+      for (let t = 0; t < randomTagsCount; t++) {
+        const tagCandidate = tags[(i + t * 3) % tags.length];
+        if (!recTags.includes(tagCandidate)) recTags.push(tagCandidate);
+      }
+
+      recipients.push({
+        id: i,
+        name: `${fName} ${lName}`,
+        phone: `+35988${(100000 + i * 1234).toString().substring(0, 6)}`,
+        tags: recTags
+      });
+    }
+
+    // Pagination State
+    let currentPage = 1;
+    let pageSize = 50;
+    let filteredRecipients = [...recipients];
+
+    let tagInstances = {}; 
+    let activeInstanceId = null;
+    let editingRecipientId = null;
+    let draggedIndex = null;
+
+    const failedImportMock = [
+      { id: 'f1', name: 'Ivan Alexiev', phone: '0888123', tags: ['Newsletter', 'VIP', 'Bulgaria', 'App User', 'B2B', 'Retail'], errors: { phone: 'Must be 12 digits' } },
+      { id: 'f2', name: '', phone: '+359888112233', tags: ['VIP'], errors: { name: 'Name is required' } },
+      { id: 'f3', name: 'Maria Georgieva', phone: 'TEXT_NUMBER', tags: [], errors: { phone: 'Invalid phone format' } },
+    ];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderTable();
+      renderManageColumns();
+      renderTags();
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.tag-autocomplete-wrapper') && !e.target.closest('.tag-dropdown-menu')) {
+          hideAllTagDropdowns();
+        }
+      });
+
+      window.addEventListener('scroll', updateFloatingMenuPosition, true);
+      window.addEventListener('resize', updateFloatingMenuPosition);
+    });
+
+    /* Sidebar Animation Toggle Handler */
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-collapsed');
+    }
+
+    function hideAllTagDropdowns() {
+      document.querySelectorAll('.tag-dropdown-menu').forEach(m => m.classList.remove('show'));
+      activeInstanceId = null;
+    }
+
+    function updateFloatingMenuPosition() {
+      if (!activeInstanceId) return;
+
+      const box = document.getElementById(`box-${activeInstanceId}`);
+      const dropdown = document.getElementById(`dropdown-${activeInstanceId}`);
+      
+      if (box && dropdown && dropdown.classList.contains('show')) {
+        const rect = box.getBoundingClientRect();
+        dropdown.style.top = `${rect.bottom + 4}px`;
+        dropdown.style.left = `${rect.left}px`;
+        dropdown.style.width = `${rect.width}px`;
+      }
+    }
+
+    // Search Handler
+    function handleSearch() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      filteredRecipients = recipients.filter(r => {
+        return (r.name && r.name.toLowerCase().includes(q)) || 
+               (r.phone && r.phone.toLowerCase().includes(q));
+      });
+      currentPage = 1;
+      renderTable();
+    }
+
+    // Render Table with Pagination
+    function renderTable() {
+      const headerRow = document.getElementById("tableHeaderRow");
+      const tbody = document.getElementById("tableBody");
+
+      let headerHTML = `<th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" /></th>`;
+      columns.forEach(col => {
+        headerHTML += `<th>${col.label} ${col.required ? '*' : ''}</th>`;
+      });
+      headerHTML += `<th style="width: 80px;">Actions</th>`;
+      headerRow.innerHTML = headerHTML;
+
+      // Slice Data for Pagination
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, filteredRecipients.length);
+      const pageData = filteredRecipients.slice(startIndex, endIndex);
+
+      let bodyHTML = "";
+      pageData.forEach(rec => {
+        bodyHTML += `<tr><td><input type="checkbox" class="row-checkbox" onchange="updateSelection()" value="${rec.id}"></td>`;
+        columns.forEach(col => {
+          let val = rec[col.id];
+          if (col.id === 'tags') {
+            val = Array.isArray(val) && val.length > 0 
+              ? `<div style="display:flex; flex-wrap:wrap; max-width:380px;">${val.map(t => `<span class="tag">${t}</span>`).join('')}</div>` 
+              : "-";
+          } else {
+            val = (val === undefined || val === null || val === "") ? "-" : val;
+          }
+          bodyHTML += `<td>${val}</td>`;
+        });
+        bodyHTML += `
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" title="Edit Recipient" onclick="openEditRecipientModal(${rec.id})"><i class="fa-solid fa-pen"></i></button>
+            </div>
+          </td>
+        </tr>`;
+      });
+
+      tbody.innerHTML = bodyHTML;
+      updatePaginationControls(startIndex, endIndex, filteredRecipients.length);
+      updateSelection();
+    }
+
+    /* Pagination Controls */
+    function updatePaginationControls(start, end, total) {
+      const info = document.getElementById('paginationInfo');
+      info.innerText = total === 0 ? "Showing 0 of 0" : `Showing ${start + 1}-${end} of ${total}`;
+
+      document.getElementById('prevPageBtn').disabled = (currentPage === 1);
+      document.getElementById('nextPageBtn').disabled = (end >= total);
+    }
+
+    function changePageSize(val) {
+      pageSize = parseInt(val);
+      currentPage = 1;
+      renderTable();
+    }
+
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTable();
+      }
+    }
+
+    function nextPage() {
+      if ((currentPage * pageSize) < filteredRecipients.length) {
+        currentPage++;
+        renderTable();
+      }
+    }
+
+    /* Autocomplete Tag Component */
+    function renderAutocompleteTagComponent(instanceId, initialSelectedTags = []) {
+      tagInstances[instanceId] = [...initialSelectedTags];
+
+      setTimeout(() => {
+        updateTagComponentUI(instanceId);
+      }, 0);
+
+      return `
+        <div class="tag-autocomplete-wrapper" id="wrapper-${instanceId}" onclick="event.stopPropagation()">
+          <div class="tag-input-box" id="box-${instanceId}" onmousedown="handleBoxMouseDown(event, '${instanceId}')">
+            <div id="badges-${instanceId}" style="display:inline-flex; flex-wrap:wrap; gap:6px; max-width:100%;"></div>
+            <input type="text" 
+                   id="input-${instanceId}" 
+                   class="tag-search-field" 
+                   placeholder="Type tag name..." 
+                   onfocus="showTagDropdown('${instanceId}')" 
+                   oninput="filterTagOptions('${instanceId}')"
+                   onkeydown="handleTagKeydown(event, '${instanceId}')" />
+          </div>
+          <div id="dropdown-${instanceId}" class="tag-dropdown-menu"></div>
+        </div>
+      `;
+    }
+
+    function handleBoxMouseDown(e, instanceId) {
+      if (e.target.tagName === 'I') return;
+      
+      const input = document.getElementById(`input-${instanceId}`);
+      if (activeInstanceId !== instanceId) {
+        showTagDropdown(instanceId);
+      }
+      setTimeout(() => input.focus(), 0);
+    }
+
+    function updateTagComponentUI(instanceId) {
+      const selected = tagInstances[instanceId] || [];
+      const badgesContainer = document.getElementById(`badges-${instanceId}`);
+      if (!badgesContainer) return;
+
+      badgesContainer.innerHTML = selected.map(t => `
+        <span class="tag-badge">
+          ${t}
+          <i class="fa-solid fa-xmark" onclick="removeTagFromInstance('${instanceId}', '${t}', event)"></i>
+        </span>
+      `).join('');
+
+      filterTagOptions(instanceId);
+    }
+
+    function showTagDropdown(instanceId) {
+      if (activeInstanceId === instanceId) return;
+      hideAllTagDropdowns();
+      
+      activeInstanceId = instanceId;
+      const dropdown = document.getElementById(`dropdown-${instanceId}`);
+      if (dropdown) {
+        dropdown.classList.add('show');
+        filterTagOptions(instanceId);
+        updateFloatingMenuPosition();
+      }
+    }
+
+    function filterTagOptions(instanceId) {
+      const input = document.getElementById(`input-${instanceId}`);
+      const dropdown = document.getElementById(`dropdown-${instanceId}`);
+      if (!input || !dropdown) return;
+
+      const query = input.value.trim().toLowerCase();
+      const selected = tagInstances[instanceId] || [];
+
+      const available = tags.filter(t => !selected.includes(t) && t.toLowerCase().includes(query));
+
+      if (available.length === 0) {
+        dropdown.innerHTML = `<div class="tag-dropdown-empty">No matching tags</div>`;
+      } else {
+        dropdown.innerHTML = available.map(t => `
+          <div class="tag-dropdown-option" onmousedown="selectTagOption('${instanceId}', '${t}', event)">
+            <span>${t}</span>
+            <i class="fa-solid fa-plus" style="font-size:11px; color:var(--text-muted);"></i>
+          </div>
+        `).join('');
+      }
+
+      updateFloatingMenuPosition();
+    }
+
+    function selectTagOption(instanceId, tag, e) {
+      if (e) e.stopPropagation();
+      if (!tagInstances[instanceId]) tagInstances[instanceId] = [];
+      tagInstances[instanceId].push(tag);
+
+      const input = document.getElementById(`input-${instanceId}`);
+      input.value = "";
+      
+      updateTagComponentUI(instanceId);
+      setTimeout(() => input.focus(), 0);
+    }
+
+    function removeTagFromInstance(instanceId, tag, e) {
+      if (e) e.stopPropagation();
+      tagInstances[instanceId] = tagInstances[instanceId].filter(t => t !== tag);
+      updateTagComponentUI(instanceId);
+    }
+
+    function handleTagKeydown(event, instanceId) {
+      const input = document.getElementById(`input-${instanceId}`);
+      if (event.key === 'Backspace' && input.value === '') {
+        const selected = tagInstances[instanceId] || [];
+        if (selected.length > 0) {
+          selected.pop();
+          updateTagComponentUI(instanceId);
+        }
+      }
+    }
+
+    /* System Tags Settings */
+    function renderTags() {
+      const container = document.getElementById("tagsList");
+      container.innerHTML = "";
+      tags.forEach((tag, idx) => {
+        container.innerHTML += `
+          <span class="tag">
+            ${tag}
+            <i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="deleteTag(${idx})"></i>
+          </span>
+        `;
+      });
+    }
+
+    function addNewTag() {
+      const input = document.getElementById("newTagInput");
+      const val = input.value.trim();
+      if (val && !tags.includes(val)) {
+        tags.push(val);
+        input.value = "";
+        renderTags();
+      }
+    }
+
+    function deleteTag(idx) {
+      tags.splice(idx, 1);
+      renderTags();
+    }
+
+    /* Manage Columns Drag and Drop Logic */
+    function renderManageColumns(triggerHint = false) {
+      const container = document.getElementById("columnsList");
+      container.innerHTML = "";
+
+      columns.forEach((col, idx) => {
+        const item = document.createElement("div");
+        item.className = `column-item ${triggerHint ? 'animate-drag-hint' : ''}`;
+        item.draggable = true;
+        item.dataset.index = idx;
+
+        item.innerHTML = `
+          <div style="display:flex; align-items:center;">
+            <i class="fa-solid fa-grip-vertical drag-handle"></i>
+            <span>${col.label} ${col.isFixed ? '<span class="badge-fixed">System Field</span>' : ''}</span>
+          </div>
+          <div class="column-item-controls">
+            ${!col.isFixed ? `<button class="icon-btn" style="color:var(--danger)" onclick="deleteColumn(${idx})"><i class="fa-solid fa-trash"></i></button>` : ''}
+          </div>
+        `;
+
+        // Event Listeners for HTML5 Drag & Drop
+        item.addEventListener("dragstart", (e) => {
+          draggedIndex = idx;
+          e.dataTransfer.effectAllowed = "move";
+          item.classList.add("dragging");
+        });
+
+        item.addEventListener("dragend", () => {
+          item.classList.remove("dragging");
+          draggedIndex = null;
+        });
+
+        item.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+        });
+
+        item.addEventListener("drop", (e) => {
+          e.preventDefault();
+          if (draggedIndex === null || draggedIndex === idx) return;
+
+          const movedItem = columns.splice(draggedIndex, 1)[0];
+          columns.splice(idx, 0, movedItem);
+
+          renderManageColumns(false);
+          renderTable();
+        });
+
+        container.appendChild(item);
+      });
+    }
+
+    function addNewColumn() {
+      const input = document.getElementById("newColumnInput");
+      const name = input.value.trim();
+      if (!name) return;
+
+      const key = name.toLowerCase().replace(/\s+/g, '_');
+      columns.push({ id: key, label: name, isFixed: false });
+      input.value = "";
+      renderManageColumns();
+      renderTable();
+    }
+
+    function deleteColumn(index) {
+      columns.splice(index, 1);
+      renderManageColumns();
+      renderTable();
+    }
+
+    /* Add Recipient Modal */
+    function openAddRecipientModal() {
+      const form = document.getElementById("dynamicAddForm");
+      form.innerHTML = "";
+      columns.forEach(col => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "16px";
+        if (col.id === 'tags') {
+          div.innerHTML = `
+            <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Select Tags</label>
+            ${renderAutocompleteTagComponent('add_recipient_tags', [])}
+          `;
+        } else {
+          div.innerHTML = `
+            <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">${col.label} ${col.required ? '*' : ''}</label>
+            <input type="text" name="${col.id}" class="grid-input" style="padding:10px;" ${col.required ? 'required' : ''} placeholder="Enter ${col.label}">
+          `;
+        }
+        form.appendChild(div);
+      });
+      openModal('addRecipientModal');
+    }
+
+    function saveRecipient() {
+      const form = document.getElementById("dynamicAddForm");
+      const formData = new FormData(form);
+      const newRec = { id: Date.now() };
+
+      columns.forEach(col => {
+        if (col.id === 'tags') {
+          newRec.tags = tagInstances['add_recipient_tags'] || [];
+        } else {
+          newRec[col.id] = formData.get(col.id);
+        }
+      });
+
+      recipients.unshift(newRec);
+      handleSearch();
+      closeModal('addRecipientModal');
+    }
+
+    /* Edit Recipient Modal */
+    function openEditRecipientModal(id) {
+      editingRecipientId = id;
+      const rec = recipients.find(r => r.id === id);
+      if (!rec) return;
+
+      const form = document.getElementById("dynamicEditForm");
+      form.innerHTML = "";
+
+      columns.forEach(col => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "16px";
+        const currentVal = rec[col.id] !== undefined ? rec[col.id] : "";
+
+        if (col.id === 'tags') {
+          const selectedTags = Array.isArray(rec.tags) ? rec.tags : [];
+          div.innerHTML = `
+            <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Select Tags</label>
+            ${renderAutocompleteTagComponent('edit_recipient_tags', selectedTags)}
+          `;
+        } else {
+          div.innerHTML = `
+            <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">${col.label} ${col.required ? '*' : ''}</label>
+            <input type="text" name="${col.id}" value="${currentVal}" class="grid-input" style="padding:10px;" ${col.required ? 'required' : ''}>
+          `;
+        }
+        form.appendChild(div);
+      });
+
+      openModal('editRecipientModal');
+    }
+
+    function updateRecipient() {
+      const form = document.getElementById("dynamicEditForm");
+      const formData = new FormData(form);
+      const rec = recipients.find(r => r.id === editingRecipientId);
+
+      if (rec) {
+        columns.forEach(col => {
+          if (col.id === 'tags') {
+            rec.tags = tagInstances['edit_recipient_tags'] || [];
+          } else {
+            rec[col.id] = formData.get(col.id);
+          }
+        });
+      }
+
+      handleSearch();
+      closeModal('editRecipientModal');
+    }
+
+    /* Failed Import Resolution Modal */
+    function simulateImport(errorCount) {
+      closeModal('importModal');
+      if (errorCount > 0) {
+        renderFailedGrid();
+        openModal('failedModal');
+      } else {
+        alert("Import successful! 50 sample recipients loaded.");
+      }
+    }
+
+    function renderFailedGrid() {
+      const header = document.getElementById("failedTableHeader");
+      const body = document.getElementById("failedTableBody");
+
+      let headerHTML = "";
+      columns.forEach(col => { 
+        headerHTML += `<th ${col.id === 'tags' ? 'style="min-width: 300px;"' : ''}>${col.label}</th>`; 
+      });
+      headerHTML += `<th>Action</th>`;
+      header.innerHTML = headerHTML;
+
+      let bodyHTML = "";
+      failedImportMock.forEach((item, index) => {
+        bodyHTML += `<tr id="failed-row-${index}">`;
+        columns.forEach(col => {
+          if (col.id === 'tags') {
+            const currentTags = item.tags || [];
+            bodyHTML += `
+              <td style="vertical-align: top;">
+                ${renderAutocompleteTagComponent(`failed_row_tags_${index}`, currentTags)}
+              </td>
+            `;
+          } else {
+            const val = item[col.id] || "";
+            const hasErr = item.errors && item.errors[col.id];
+            const errorMsg = hasErr ? item.errors[col.id] : "";
+
+            bodyHTML += `
+              <td style="vertical-align: top;">
+                <input type="text" 
+                       class="grid-input ${hasErr ? 'has-error' : ''}" 
+                       data-row="${index}" 
+                       data-field="${col.id}" 
+                       value="${val}">
+                ${hasErr ? `<span class="error-badge"><i class="fa-solid fa-circle-exclamation"></i> ${errorMsg}</span>` : ''}
+              </td>
+            `;
+          }
+        });
+
+        bodyHTML += `
+          <td style="vertical-align: top; text-align: center;">
+            <button class="icon-btn" style="color: var(--danger); margin-top: 6px;" onclick="removeFailedRow(${index})">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>`;
+      });
+
+      body.innerHTML = bodyHTML;
+    }
+
+    function removeFailedRow(index) {
+      const row = document.getElementById(`failed-row-${index}`);
+      if (row) row.remove();
+    }
+
+    function resolveAllFailedRecords() {
+      failedImportMock.forEach((item, index) => {
+        const rowElement = document.getElementById(`failed-row-${index}`);
+        if (!rowElement) return;
+
+        const updatedRec = { id: Date.now() + Math.random() };
+        columns.forEach(col => {
+          if (col.id === 'tags') {
+            updatedRec.tags = tagInstances[`failed_row_tags_${index}`] || [];
+          } else {
+            const input = rowElement.querySelector(`input[data-field="${col.id}"]`);
+            if (input) updatedRec[col.id] = input.value;
+          }
+        });
+
+        if (updatedRec.phone || updatedRec.name) {
+          recipients.unshift(updatedRec);
+        }
+      });
+
+      handleSearch();
+      closeModal('failedModal');
+    }
+
+    /* Selection & Bulk Actions */
+    function toggleSelectAll(master) {
+      document.querySelectorAll(".row-checkbox").forEach(cb => cb.checked = master.checked);
+      updateSelection();
+    }
+
+    function updateSelection() {
+      const selected = document.querySelectorAll(".row-checkbox:checked").length;
+      document.getElementById("selectedCount").innerText = `${selected} selected`;
+      const btn = document.getElementById("bulkDeleteBtn");
+      
+      if (selected > 0) {
+        btn.classList.add("visible");
+      } else {
+        btn.classList.remove("visible");
+      }
+    }
+
+    function bulkDelete() {
+      const checkedBoxes = document.querySelectorAll(".row-checkbox:checked");
+      const idsToDelete = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+      recipients = recipients.filter(r => !idsToDelete.includes(r.id));
+      handleSearch();
+    }
+
+    function switchTab(tabId, tabElement) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+      tabElement.classList.add("active");
+    }
+
+    function openModal(id) { 
+      document.getElementById(id).classList.add("active"); 
+      if (id === 'manageModal') {
+        renderManageColumns(true); // Trigger brief hint animation when opening
+      }
+    }
+
+    function closeModal(id) { 
+      hideAllTagDropdowns();
+      document.getElementById(id).classList.remove("active"); 
+    }
+  </script>
+</body>
+</html>

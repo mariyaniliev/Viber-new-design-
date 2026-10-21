@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSG PLS - Login & Register</title>
+  
+  <!-- Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- FontAwesome 6.4.0 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    :root {
+      --color-purple: #6857d5;
+      --color-purple-hover: #5746be;
+      --danger: #ea5455;
+      --success: #28c76f;
+      --warning: #ff9f43;
+      --text-dark: #1e1e1e;
+      --border-color: #e2e8f0;
+    }
+
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: radial-gradient(circle at top right, #ffffff, #f1f5f9, #e2e8f0);
+      min-height: 100vh;
+    }
+
+    /* 3D Perspective Scene Container */
+    .scene { 
+      perspective: 1200px; 
+    }
+    
+    .main-portal {
+      transform: rotateX(2deg) rotateY(-1deg);
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.6s ease;
+      box-shadow: 
+        0 30px 90px -20px rgba(104, 87, 213, 0.25),
+        0 20px 40px -15px rgba(30, 30, 30, 0.08);
+    }
+    
+    .main-portal:hover { 
+      transform: rotateX(0deg) rotateY(0deg); 
+      box-shadow: 
+        0 35px 100px -15px rgba(104, 87, 213, 0.3),
+        0 25px 50px -10px rgba(30, 30, 30, 0.1);
+    }
+
+    /* Tab Switch Animations */
+    .tab-pane-enter {
+      animation: tabFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes tabFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Floating Message Bubble Animation */
+    @keyframes message-float {
+      0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+      50% { transform: translateY(-10px) scale(1.02); opacity: 0.85; }
+    }
+    .msg-bubble { 
+      animation: message-float 4s infinite ease-in-out; 
+    }
+
+    /* Button Gradient using Brand Purple Theme */
+    .btn-gradient {
+      background: linear-gradient(90deg, #6857d5, #5746be, #6857d5);
+      background-size: 200% auto;
+      transition: all 0.4s ease;
+    }
+    .btn-gradient:hover { 
+      background-position: right center; 
+      box-shadow: 0 12px 25px -5px rgba(104, 87, 213, 0.4);
+    }
+
+    /* Input Glassmorphism & Focus Styles */
+    .glass-input {
+      background: rgba(248, 250, 252, 0.85);
+      backdrop-filter: blur(6px);
+      border: 1.5px solid var(--border-color);
+      transition: all 0.25s ease;
+    }
+    .glass-input:focus {
+      background: #ffffff;
+      border-color: var(--color-purple);
+      box-shadow: 0 0 0 4px rgba(104, 87, 213, 0.12);
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 sm:p-6 min-h-screen relative overflow-x-hidden selection:bg-[#6857d5] selection:text-white">
+
+  <!-- Ambient Background Glows -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-[#6857d5] opacity-[0.12] rounded-full blur-[130px]"></div>
+    <div class="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-[#28c76f] opacity-[0.08] rounded-full blur-[130px]"></div>
+  </div>
+
+  <!-- Main 3D Card Perspective Scene -->
+  <div class="scene w-full max-w-[1080px] z-10 my-auto">
+    <div class="main-portal w-full flex flex-col lg:flex-row bg-white/95 backdrop-blur-2xl rounded-[36px] sm:rounded-[48px] overflow-hidden border border-white/80">
+      
+      <!-- Left Panel: Dark Hero Section with White Text Logo -->
+      <div class="hidden lg:flex lg:w-[45%] bg-[#0f172a] p-12 xl:p-14 flex-col justify-between relative overflow-hidden">
+        
+        <!-- Subtle Grid Pattern Background -->
+        <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(#6857d5 1px, transparent 1px); background-size: 28px 28px;"></div>
+        
+        <!-- Top Section: Brand Identity with White Text Logo -->
+        <div class="relative z-10">
+          <div class="flex items-center gap-4 mb-8">
+            <img src="msgplswhitetext.png" alt="MSG PLS Logo" class="h-12 w-auto object-contain filter drop-shadow-lg" />
+          </div>
+
+          <h1 class="text-4xl xl:text-5xl font-extrabold text-white leading-tight">
+            Reach further, <br/>
+            <span class="text-[#28c76f]">connect better.</span>
+          </h1>
+        </div>
+
+        <!-- Middle Section: Animated Message Bubbles -->
+        <div class="relative py-8 my-auto">
+          <!-- Bubble 1 -->
+          <div class="msg-bubble bg-white/10 border border-white/10 p-4 rounded-2xl mb-4 ml-4 backdrop-blur-md">
+            <div class="flex gap-3 items-center">
+              <div class="h-9 w-9 rounded-full bg-[#6857d5] flex items-center justify-center text-white text-xs font-bold shadow-md">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <div class="space-y-1.5 flex-1">
+                <div class="h-2.5 w-3/4 bg-white/30 rounded-full"></div>
+                <div class="h-2 w-1/2 bg-white/15 rounded-full"></div>
+              </div>
+              <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">Delivered</span>
+            </div>
+          </div>
+
+          <!-- Bubble 2 -->
+          <div class="msg-bubble bg-white/5 border border-white/10 p-4 rounded-2xl mr-8 backdrop-blur-md" style="animation-delay: 1.2s;">
+            <div class="flex gap-3 items-center justify-end text-right">
+              <div class="space-y-1.5 flex-1 flex flex-col items-end">
+                <div class="h-2.5 w-2/3 bg-purple-300/30 rounded-full"></div>
+                <div class="h-2 w-1/3 bg-white/15 rounded-full"></div>
+              </div>
+              <div class="h-9 w-9 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center text-white text-xs font-bold">
+                <i class="fa-solid fa-user"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Section: Platform Info -->
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-2 text-amber-400 text-xs">
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <span class="text-slate-400 text-xs ml-1 font-medium">(4.9/5 from 1,200+ campaigns)</span>
+          </div>
+          <p class="text-slate-400 text-xs font-medium leading-relaxed">
+            Enterprise-grade Viber broadcast, rich media campaign & subscriber management platform.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right Panel: Smooth Height Animated Form Container -->
+      <div class="w-full lg:w-[55%] p-8 sm:p-12 lg:p-14 bg-white flex flex-col justify-center" 
+           x-data="{ 
+             isLogin: true, 
+             containerHeight: 0,
+
+             /* Login form state */
+             email: '',
+             password: '',
+             loginError: '',
+
+             updateHeight() {
+               this.$nextTick(() => {
+                 this.containerHeight = this.isLogin ? this.$refs.loginPane.scrollHeight : this.$refs.registerPane.scrollHeight;
+               });
+             },
+
+             /* Connect -> validate credentials -> go to the OTP security code screen */
+             submitLogin() {
+               const email = this.email.trim();
+               const password = this.password;
+
+               if (!email || !password) {
+                 this.loginError = 'Please enter both your work email and password.';
+                 this.updateHeight();
+                 return;
+               }
+               if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                 this.loginError = 'Please enter a valid email address.';
+                 this.updateHeight();
+                 return;
+               }
+
+               this.loginError = '';
+               window.location.href = '2.login%20-%20security%20code%20-otp.html';
+             }
+           }"
+           x-init="updateHeight()">
+        <div class="max-w-md w-full mx-auto">
+          
+          <!-- Navigation Tabs -->
+          <nav class="flex gap-8 mb-8 border-b border-slate-100 pb-4">
+            <button @click="isLogin = true; updateHeight()" type="button" class="relative group pb-2 focus:outline-none">
+              <span :class="isLogin ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-bold'" class="text-xs tracking-widest uppercase transition-colors">
+                LOGIN
+              </span>
+              <div x-show="isLogin" class="absolute -bottom-[17px] left-0 w-full h-1 bg-[#6857d5] rounded-full"></div>
+            </button>
+
+            <button @click="isLogin = false; updateHeight()" type="button" class="relative group pb-2 focus:outline-none">
+              <span :class="!isLogin ? 'text-slate-900 font-extrabold' : 'text-slate-400 font-bold'" class="text-xs tracking-widest uppercase transition-colors">
+                REGISTER
+              </span>
+              <div x-show="!isLogin" class="absolute -bottom-[17px] left-0 w-full h-1 bg-[#6857d5] rounded-full"></div>
+            </button>
+          </nav>
+
+          <!-- Dynamic Form Height Container -->
+          <div class="transition-[height] duration-500 ease-in-out overflow-hidden" 
+               :style="'height: ' + containerHeight + 'px'">
+            
+            <!-- LOGIN VIEW -->
+            <div x-show="isLogin" 
+                 x-ref="loginPane"
+                 x-transition:enter="tab-pane-enter"
+                 class="space-y-6">
+              
+              <header>
+                <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Welcome back</h2>
+                <p class="text-slate-500 mt-1.5 text-xs font-medium">Enter your credentials to access your campaign dashboard.</p>
+              </header>
+
+              <form @submit.prevent class="space-y-4">
+                <div class="space-y-1">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Work Email</label>
+                  <div class="relative">
+                    <input type="email" x-model="email" @input="loginError = ''" @keydown.enter.prevent="submitLogin()" placeholder="admin@company.com" class="glass-input w-full rounded-2xl px-5 py-3.5 text-slate-900 text-sm font-semibold outline-none">
+                    <i class="fa-regular fa-envelope absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Password</label>
+                  <div class="relative">
+                    <input type="password" x-model="password" @input="loginError = ''" @keydown.enter.prevent="submitLogin()" placeholder="••••••••" class="glass-input w-full rounded-2xl px-5 py-3.5 text-slate-900 text-sm font-semibold outline-none">
+                    <i class="fa-solid fa-lock absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                  </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-1">
+                  <label class="flex items-center gap-2.5 cursor-pointer group select-none">
+                    <input type="checkbox" class="sr-only peer">
+                    <div class="h-4 w-4 border-2 border-slate-300 rounded-md group-hover:border-[#6857d5] peer-checked:bg-[#6857d5] peer-checked:border-[#6857d5] transition-all flex items-center justify-center">
+                      <i class="fa-solid fa-check text-white text-[9px] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">Stay signed in</span>
+                  </label>
+                  
+                  <a href="3.recovery-link.html" class="text-xs font-bold text-[#6857d5] hover:text-[#5746be] hover:underline transition-colors">Forgot password?</a>
+                </div>
+
+                <!-- Inline validation message -->
+                <p x-show="loginError" x-transition class="text-[11px] font-bold text-[#ea5455] flex items-center gap-1.5 ml-1">
+                  <i class="fa-solid fa-circle-exclamation"></i>
+                  <span x-text="loginError"></span>
+                </p>
+
+                <button type="button" @click="submitLogin()" class="btn-gradient w-full py-3.5 rounded-2xl text-white font-bold text-xs uppercase tracking-[0.15em] shadow-lg shadow-[#6857d5]/25 transform active:scale-[0.98] transition-transform mt-2">
+                  <span>Authorize Access</span>
+                  <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                </button>
+              </form>
+            </div>
+
+            <!-- REGISTER VIEW -->
+            <div x-show="!isLogin" 
+                 x-ref="registerPane"
+                 x-transition:enter="tab-pane-enter"
+                 class="space-y-6">
+              
+              <header>
+                <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Create an account</h2>
+                <p class="text-slate-500 mt-1.5 text-xs font-medium">Get started with your enterprise Viber marketing suite.</p>
+              </header>
+
+              <form @submit.prevent class="space-y-3.5">
+                <div class="space-y-1">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Full Name</label>
+                  <div class="relative">
+                    <input type="text" placeholder="John Doe" class="glass-input w-full rounded-2xl px-5 py-3 text-slate-900 text-sm font-semibold outline-none">
+                    <i class="fa-regular fa-user absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Work Email</label>
+                  <div class="relative">
+                    <input type="email" placeholder="admin@company.com" class="glass-input w-full rounded-2xl px-5 py-3 text-slate-900 text-sm font-semibold outline-none">
+                    <i class="fa-regular fa-envelope absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Password</label>
+                  <div class="relative">
+                    <input type="password" placeholder="••••••••" class="glass-input w-full rounded-2xl px-5 py-3 text-slate-900 text-sm font-semibold outline-none">
+                    <i class="fa-solid fa-lock absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                  </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-1">
+                  <label class="flex items-center gap-2.5 cursor-pointer group select-none">
+                    <input type="checkbox" class="sr-only peer">
+                    <div class="h-4 w-4 border-2 border-slate-300 rounded-md group-hover:border-[#6857d5] peer-checked:bg-[#6857d5] peer-checked:border-[#6857d5] transition-all flex items-center justify-center">
+                      <i class="fa-solid fa-check text-white text-[9px] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">I agree to Terms & Conditions</span>
+                  </label>
+                </div>
+
+                <button type="button" onclick="window.location.href='4.Dashboard.html'" class="btn-gradient w-full py-3.5 rounded-2xl text-white font-bold text-xs uppercase tracking-[0.15em] shadow-lg shadow-[#6857d5]/25 transform active:scale-[0.98] transition-transform mt-2">
+                  <span>Create Account</span>
+                  <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                </button>
+              </form>
+            </div>
+
+          </div>
+
+          <!-- Shared SSO Authentication Footer (Always Visible Outside Height Crop) -->
+          <footer class="pt-6 mt-2">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="h-[1px] flex-1 bg-slate-200"></div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise Single Sign-On</span>
+              <div class="h-[1px] flex-1 bg-slate-200"></div>
+            </div>
+            
+            <div class="flex gap-3">
+              <button type="button" class="flex-1 py-2.5 px-4 border border-slate-200 rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2 font-bold text-slate-700 text-xs">
+                <i class="fa-brands fa-google text-red-500"></i>
+                <span>Google Cloud</span>
+              </button>
+              <button type="button" class="flex-1 py-2.5 px-4 border border-slate-200 rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2 font-bold text-slate-700 text-xs">
+                <i class="fa-brands fa-microsoft text-blue-500"></i>
+                <span>Microsoft</span>
+              </button>
+            </div>
+          </footer>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom Gateway Label -->
+  <div class="fixed bottom-6 text-[10px] font-bold text-slate-400 tracking-[0.4em] uppercase animate-pulse pointer-events-none text-center">
+    Encrypted Portal Gateway • MSG PLS
+  </div>
+
+</body>
+</html>

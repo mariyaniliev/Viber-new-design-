@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MSG PLS - Automations</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Drawflow Library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jerosoler/Drawflow/dist/drawflow.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/jerosoler/Drawflow/dist/drawflow.min.js"></script>
+
+  <style>
+    :root {
+      --viber-purple: #7360f2;
+      --viber-purple-dark: #5944d3;
+    }
+    .bg-viber { background-color: var(--viber-purple); }
+    .bg-viber:hover { background-color: var(--viber-purple-dark); }
+    .text-viber { color: var(--viber-purple); }
+    .border-viber { border-color: var(--viber-purple); }
+
+    /* Zoom from the top-left so a fitted flow starts at the canvas edge
+       instead of drifting inward (the default origin is the centre). */
+    #drawflow > .drawflow { transform-origin: 0 0; }
+
+    /* Light Theme Canvas Grid */
+    #drawflow {
+      width: 100%;
+      height: 100%;
+      background: #f8fafc;
+      background-size: 24px 24px;
+      background-image: radial-gradient(circle, #cbd5e1 1.5px, transparent 1.5px);
+    }
+
+    /* Node Core Styling & Hardware-Accelerated 60fps Dragging */
+    .drawflow .drawflow-node {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      color: #0f172a;
+      width: 240px !important;
+      padding: 0 !important;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    /* Promote nodes onto their own GPU layer ONLY while a drag is in progress.
+       A promoted layer is rasterised once at its own scale and then resampled
+       by the canvas zoom, so leaving it on permanently made every label blurry
+       at any zoom below 100% — which is exactly when a bigger flow is fitted
+       to the canvas. Off during normal viewing, text is rasterised crisply at
+       whatever zoom the canvas is showing. */
+    #drawflow.is-dragging .drawflow-node {
+      will-change: transform, left, top;
+      backface-visibility: hidden;
+    }
+
+    .drawflow .drawflow-node.selected {
+      border-color: var(--viber-purple) !important;
+      box-shadow: 0 0 0 3px rgba(115, 96, 242, 0.25), 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Category Specific Border Themes */
+    .drawflow .drawflow-node.trigger-node { border-color: #6366f1; }
+    .drawflow .drawflow-node.message-node { border-color: #10b981; }
+    .drawflow .drawflow-node.logic-node   { border-color: #f59e0b; }
+    .drawflow .drawflow-node.timing-node  { border-color: #06b6d4; }
+    .drawflow .drawflow-node.data-node    { border-color: #8b5cf6; }
+    .drawflow .drawflow-node.exit-node    { border-color: #ef4444; }
+
+    /* Ports / Connection Anchors */
+    .drawflow .drawflow-node .input,
+    .drawflow .drawflow-node .output {
+      width: 14px;
+      height: 14px;
+      border: 3px solid #ffffff;
+      background: var(--viber-purple);
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(115, 96, 242, 0.3);
+      transition: transform 0.15s ease;
+    }
+    .drawflow .drawflow-node .input:hover,
+    .drawflow .drawflow-node .output:hover {
+      transform: scale(1.35);
+      background: var(--viber-purple-dark);
+    }
+    .drawflow .drawflow-node .input { left: -7px; top: 50%; }
+    .drawflow .drawflow-node .output { right: -7px; top: 50%; }
+
+    /* Multi-port Vertical Layouts for Condition & Multi-branch Nodes */
+    .drawflow .drawflow-node.logic-node .outputs {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: absolute;
+      right: -7px;
+      top: 42px;
+    }
+    .drawflow .drawflow-node.logic-node .output {
+      position: relative !important;
+      right: 0 !important;
+      top: 0 !important;
+    }
+
+    /* Connection SVG Paths */
+    .drawflow .connection .main-path {
+      stroke: var(--viber-purple);
+      stroke-width: 3px;
+    }
+    .drawflow .connection.selected .main-path {
+      stroke: #ef4444;
+      stroke-width: 4px;
+    }
+
+    /* Mini-Map Overlay */
+    #minimap {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 180px;
+      height: 120px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(4px);
+      overflow: hidden;
+      z-index: 20;
+    }
+    .minimap-node {
+      position: absolute;
+      background: var(--viber-purple);
+      border-radius: 2px;
+    }
+    .minimap-viewport {
+      position: absolute;
+      border: 1.5px solid var(--viber-purple);
+      background: rgba(115, 96, 242, 0.12);
+      border-radius: 4px;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* ============================================================
+       SHARED APP SHELL — sidebar + top header, identical to the
+       other MSG PLS pages. Scoped to .app-* class names so it never
+       collides with the Tailwind-styled builder chrome below.
+       ============================================================ */
+    :root {
+      --color-purple: #6857d5;
+      --color-purple-hover: #5746be;
+      --color-purple-bg: rgba(104, 87, 213, 0.12);
+      --danger: #ea5455;
+      --text-dark: #1e1e1e;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --bg-light: #f8fafc;
+      --sidebar-width: 250px;
+      --sidebar-collapsed-width: 70px;
+      --header-height: 68px;
+    }
+
+    [x-cloak] { display: none !important; }
+
+    body {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f4f5fa;
+      color: var(--text-dark);
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Animated Collapsible Sidebar Navigation */
+    .app-sidebar {
+      width: var(--sidebar-width);
+      background-color: #ffffff;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100vh;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    body.sidebar-collapsed .app-sidebar { width: var(--sidebar-collapsed-width); }
+
+    .brand {
+      height: var(--header-height);
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      height: 38px;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      overflow: hidden;
+    }
+    .brand-logo-container img { height: 38px; width: auto; object-fit: contain; }
+    body.sidebar-collapsed .brand-logo-container { opacity: 0; visibility: hidden; }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--text-dark);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .hamburger-btn:hover { background-color: var(--color-purple-bg); color: var(--color-purple); }
+
+    .nav-list-wrapper { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 8px; }
+    .nav-list-wrapper::-webkit-scrollbar { width: 4px; }
+    .nav-list-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .nav-list { list-style: none; margin: 0; padding: 0; }
+    .nav-item {
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 500;
+      margin-bottom: 4px;
+      transition: background-color 0.2s, color 0.2s;
+      height: 44px;
+      text-decoration: none;
+      position: relative;
+    }
+    .nav-item i { font-size: 18px; min-width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-item span { transition: opacity 0.2s ease, visibility 0.2s ease; }
+    body.sidebar-collapsed .nav-item span { opacity: 0; visibility: hidden; }
+    .nav-item:hover { background-color: var(--bg-light); color: var(--text-dark); }
+    .nav-item.active { background-color: var(--color-purple-bg); color: var(--color-purple); font-weight: 600; }
+
+    /* Unread Messages Pulse Dot */
+    .unread-pulse-dot {
+      width: 9px;
+      height: 9px;
+      background-color: var(--danger);
+      border-radius: 50%;
+      position: absolute;
+      right: 14px;
+      box-shadow: 0 0 0 2px #ffffff;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(234, 84, 85, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0); }
+    }
+
+    .version-tag {
+      padding: 16px 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+      flex-shrink: 0;
+      transition: opacity 0.2s ease;
+    }
+    body.sidebar-collapsed .version-tag span { display: none; }
+
+    /* Main Container Area */
+    .app-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top Header Bar */
+    .app-header {
+      background: #ffffff;
+      height: var(--header-height);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .user-profile { display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; }
+
+    /* Screen 2 hands its height to the Drawflow canvas */
+    .app-builder { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .builder-body { flex: 1; min-height: 0; height: 100%; display: flex; overflow: hidden; position: relative; }
+
+    /* ============================================================
+       PAGE CONTENT — buttons, search bar, title and list card,
+       matched to 7.Recipients.html.
+       ============================================================ */
+    .app-workspace {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+      overflow: hidden;
+    }
+
+    .sticky-top-block { flex-shrink: 0; padding-bottom: 16px; background-color: #f4f5fa; }
+    .page-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .page-title { font-size: 26px; font-weight: 700; color: var(--text-dark); }
+    .action-group { display: flex; gap: 12px; align-items: center; }
+
+    /* Unified clean button styles */
+    .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-purple { background-color: var(--color-purple); color: #ffffff; }
+    .btn-purple:hover { background-color: var(--color-purple-hover); transform: translateY(-1px); }
+    .btn-outline { background-color: #ffffff; border-color: var(--border-color); color: var(--text-dark); }
+    .btn-outline:hover { background-color: var(--bg-light); border-color: #cbd5e1; transform: translateY(-1px); }
+
+    /* Search Input Card */
+    .filter-card {
+      background: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      flex-wrap: wrap;
+    }
+    .search-input {
+      flex: 1;
+      height: 38px;
+      padding: 0 12px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      color: var(--text-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--color-purple); }
+
+    /* List Container Card */
+    .list-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .list-header-bar {
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      background-color: #fafafa;
+      height: 58px;
+      flex-shrink: 0;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .list-scroll { flex: 1; overflow: auto; }
+
+    /* One automation row — spacing and type scale of a Recipients table row */
+    .flow-row {
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    .flow-row:hover { background-color: #f8fafc; }
+    .flow-row-main { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .flow-icon {
+      height: 40px;
+      width: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .flow-name-row { display: flex; align-items: center; gap: 8px; }
+    .flow-name { font-size: 14px; font-weight: 600; color: var(--text-dark); }
+    .flow-row:hover .flow-name { color: var(--color-purple); }
+    .flow-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .flow-meta strong { color: var(--text-dark); font-weight: 600; }
+
+    /* Pill badges, same geometry as the Recipients tags */
+    .type-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      text-transform: capitalize;
+    }
+    .type-badge.promotional { background: var(--color-purple-bg); color: var(--color-purple); }
+    .type-badge.transactional { background: #fef3c7; color: #92400e; }
+
+    .flow-row-side { display: flex; align-items: center; gap: 24px; flex-shrink: 0; }
+    .flow-status { font-size: 12px; font-weight: 600; display: block; text-align: right; }
+    .flow-status.published { color: #28c76f; }
+    .flow-status.draft { color: var(--text-muted); }
+    .flow-stats { font-size: 12px; color: var(--text-muted); display: block; text-align: right; margin-top: 2px; }
+    .flow-chevron { color: var(--text-muted); font-size: 13px; }
+    .flow-row:hover .flow-chevron { color: var(--color-purple); }
+
+    .rules-chip {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #eafaf1;
+      color: #1f9254;
+      border: 1px solid #b7e8cd;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .rules-chip .dot { height: 7px; width: 7px; border-radius: 50%; background: #28c76f; }
+
+    .empty-state { padding: 48px 24px; text-align: center; color: var(--text-muted); font-size: 14px; }
+  </style>
+</head>
+<body class="antialiased" x-data="flowApp()">
+
+  <!-- ================= SHARED SIDEBAR ================= -->
+  <aside class="app-sidebar" id="sidebar">
+    <div class="brand">
+      <button class="hamburger-btn" id="sidebarToggle" onclick="toggleSidebar()" title="Toggle Menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <!-- Logo Image File Integration -->
+      <div class="brand-logo-container">
+        <img src="logoNew.png" alt="MSG PLS Logo" />
+      </div>
+    </div>
+
+    <!-- Scrollable Navigation Area -->
+    <div class="nav-list-wrapper">
+      <ul class="nav-list">
+        <li><a class="nav-item" href="4.Dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+        <li>
+          <a class="nav-item" href="5.Messages.html">
+            <i class="fa-solid fa-comments"></i>
+            <span>Messages</span>
+            <div class="unread-pulse-dot" id="sidebarUnreadDot" title="New unread replies"></div>
+          </a>
+        </li>
+        <li><a class="nav-item" href="6.template.html"><i class="fa-solid fa-layer-group"></i> <span>Templates</span></a></li>
+        <li><a class="nav-item" href="7.Recipients.html"><i class="fa-solid fa-users"></i> <span>Recipients</span></a></li>
+        <li><a class="nav-item" href="8.Campaign%20(not%20final%202).html"><i class="fa-solid fa-bullhorn"></i> <span>Campaigns</span></a></li>
+        <li><a class="nav-item active" href="9.Automations%20(not%20final).html"><i class="fa-solid fa-robot"></i> <span>Automations</span></a></li>
+        <li><a class="nav-item" href="#" onclick="return false;" title="Coming soon"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+      </ul>
+    </div>
+
+    <div class="version-tag">
+      <span>v2.6.0</span>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <!-- Top Header Bar -->
+    <header class="app-header">
+      <div class="user-profile">
+        <i class="fa-solid fa-circle-user fa-lg" style="color: var(--color-purple)"></i> Business Account <i class="fa-solid fa-angle-down"></i>
+      </div>
+    </header>
+
+
+    <!-- SCREEN 1: AUTOMATION FLOWS LIST -->
+    <div x-show="currentScreen === 'list'" class="app-workspace">
+      <!-- Sticky Top Controls -->
+      <div class="sticky-top-block">
+        <div class="page-title-row">
+          <h1 class="page-title">Automations</h1>
+
+          <div class="action-group">
+            <span class="rules-chip"><span class="dot"></span> 2026 Rules Enforced</span>
+            <button class="btn btn-purple" @click="createNewFlow()">
+              <i class="fa-solid fa-plus"></i> Create Automation
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-card">
+          <input type="text" class="search-input" x-model="searchQuery"
+                 placeholder="Search flows by name, event trigger, or template..." />
+        </div>
+      </div>
+
+      <!-- Automations List Card -->
+      <div class="list-card">
+        <div class="list-header-bar">
+          <span><span x-text="filteredFlows.length"></span> automations</span>
+        </div>
+
+        <div class="list-scroll">
+          <template x-for="item in filteredFlows" :key="item.id">
+            <div class="flow-row" @click="openFlow(item)">
+              <div class="flow-row-main">
+                <div class="flow-icon" :class="item.bgGradient">
+                  <i :class="item.icon + ' ' + item.iconColor"></i>
+                </div>
+
+                <div>
+                  <div class="flow-name-row">
+                    <span class="flow-name" x-text="item.name"></span>
+                    <span class="type-badge" :class="item.type" x-text="item.type"></span>
+                  </div>
+                  <div class="flow-meta">
+                    <span>Trigger: <strong x-text="item.trigger"></strong></span>
+                    <span>&bull;</span>
+                    <span>Updated: <span x-text="item.updated"></span></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flow-row-side">
+                <div>
+                  <span class="flow-status" :class="item.status" x-text="item.status === 'published' ? '\u25CF Published' : '\u25CB Draft'"></span>
+                  <span class="flow-stats" x-text="item.stats"></span>
+                </div>
+                <i class="fa-solid fa-chevron-right flow-chevron"></i>
+              </div>
+            </div>
+          </template>
+
+          <div class="empty-state" x-show="filteredFlows.length === 0">No automations match your search.</div>
+        </div>
+      </div>
+
+    </div><!-- /screen 1 -->
+
+    <!-- SCREEN 2: CANVAS & BUILDER WORKSPACE -->
+    <div x-show="currentScreen === 'builder'" class="app-builder bg-slate-50" x-cloak>
+    
+    <!-- Top Action Navbar -->
+    <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between z-30 shadow-sm">
+      <div class="flex items-center gap-4">
+        <button @click="backToList()" class="h-9 w-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div>
+          <div class="flex items-center gap-2">
+            <input type="text" x-model="activeFlow.name" class="font-bold text-slate-900 text-base outline-none border-b border-transparent hover:border-slate-300 focus:border-viber" />
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600" x-text="'v' + activeFlow.version"></span>
+          </div>
+          <p class="text-xs text-slate-400">Click any block to open right-hand configuration panel.</p>
+        </div>
+      </div>
+
+      <!-- Canvas Tools & Validation Status -->
+      <div class="flex items-center gap-3">
+        <div class="px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition"
+             :class="validationErrors.length === 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-amber-50 border-amber-300 text-amber-800'">
+          <i :class="validationErrors.length === 0 ? 'fa-solid fa-circle-check text-emerald-500' : 'fa-solid fa-triangle-exclamation text-amber-600'"></i>
+          <span x-text="validationErrors.length === 0 ? 'Flow Validated' : validationErrors.length + ' Warnings'"></span>
+        </div>
+
+        <!-- Zoom Controls -->
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button @click="zoomOut()" title="Zoom Out" class="px-2.5 py-1 text-slate-600 hover:bg-white rounded-lg text-xs font-bold"><i class="fa-solid fa-minus"></i></button>
+          <button @click="zoomReset()" title="Reset Zoom" class="px-2 py-1 text-slate-600 hover:bg-white rounded-lg text-xs font-bold">Reset</button>
+          <button @click="zoomIn()" title="Zoom In" class="px-2.5 py-1 text-slate-600 hover:bg-white rounded-lg text-xs font-bold"><i class="fa-solid fa-plus"></i></button>
+        </div>
+
+        <button @click="clearCanvas()" class="px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl">Clear</button>
+        <button @click="saveFlow()" class="bg-viber text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all">Publish Flow</button>
+      </div>
+    </header>
+
+    <!-- MAIN BUILDER LAYOUT -->
+    <div class="builder-body">
+      
+      <!-- LEFT SIDEBAR: 46 BLOCK LIBRARY -->
+      <aside class="w-72 bg-white border-r border-slate-200 p-4 flex flex-col gap-3 z-20 overflow-y-auto">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Block Library (46)</h4>
+
+        <!-- Category 1: Triggers -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <div @click="activeCategory = activeCategory === 'triggers' ? '' : 'triggers'" class="bg-slate-50 p-3 font-bold text-xs text-slate-700 flex justify-between items-center cursor-pointer">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-bolt text-indigo-500"></i> Triggers (12)</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+          </div>
+          <div x-show="activeCategory === 'triggers'" class="p-2 space-y-1.5 bg-white border-t border-slate-100">
+            <template x-for="b in blockLibrary.triggers" :key="b.type">
+              <div class="p-2.5 bg-indigo-50/60 border border-indigo-100 rounded-lg cursor-grab active:cursor-grabbing hover:border-indigo-300 transition-all flex items-center gap-2.5 text-xs font-bold text-indigo-950"
+                   draggable="true" @dragstart="onSidebarDragStart($event, b.type, 'trigger')">
+                <i :class="b.icon + ' text-indigo-600'"></i>
+                <span x-text="b.label"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Category 2: Messaging Actions -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <div @click="activeCategory = activeCategory === 'messaging' ? '' : 'messaging'" class="bg-slate-50 p-3 font-bold text-xs text-slate-700 flex justify-between items-center cursor-pointer">
+            <span class="flex items-center gap-2"><i class="fa-brands fa-viber text-emerald-500"></i> Messaging Actions (7)</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+          </div>
+          <div x-show="activeCategory === 'messaging'" class="p-2 space-y-1.5 bg-white border-t border-slate-100">
+            <template x-for="b in blockLibrary.messaging" :key="b.type">
+              <div class="p-2.5 bg-emerald-50/60 border border-emerald-100 rounded-lg cursor-grab active:cursor-grabbing hover:border-emerald-300 transition-all flex items-center gap-2.5 text-xs font-bold text-emerald-950"
+                   draggable="true" @dragstart="onSidebarDragStart($event, b.type, 'message')">
+                <i :class="b.icon + ' text-emerald-600'"></i>
+                <span x-text="b.label"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Category 3: Logic & Branching -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <div @click="activeCategory = activeCategory === 'logic' ? '' : 'logic'" class="bg-slate-50 p-3 font-bold text-xs text-slate-700 flex justify-between items-center cursor-pointer">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-code-branch text-amber-500"></i> Logic & Branching (9)</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+          </div>
+          <div x-show="activeCategory === 'logic'" class="p-2 space-y-1.5 bg-white border-t border-slate-100">
+            <template x-for="b in blockLibrary.logic" :key="b.type">
+              <div class="p-2.5 bg-amber-50/60 border border-amber-100 rounded-lg cursor-grab active:cursor-grabbing hover:border-amber-300 transition-all flex items-center gap-2.5 text-xs font-bold text-amber-950"
+                   draggable="true" @dragstart="onSidebarDragStart($event, b.type, 'logic')">
+                <i :class="b.icon + ' text-amber-600'"></i>
+                <span x-text="b.label"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Category 4: Timing -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <div @click="activeCategory = activeCategory === 'timing' ? '' : 'timing'" class="bg-slate-50 p-3 font-bold text-xs text-slate-700 flex justify-between items-center cursor-pointer">
+            <span class="flex items-center gap-2"><i class="fa-regular fa-clock text-cyan-500"></i> Timing Controls (5)</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+          </div>
+          <div x-show="activeCategory === 'timing'" class="p-2 space-y-1.5 bg-white border-t border-slate-100">
+            <template x-for="b in blockLibrary.timing" :key="b.type">
+              <div class="p-2.5 bg-cyan-50/60 border border-cyan-100 rounded-lg cursor-grab active:cursor-grabbing hover:border-cyan-300 transition-all flex items-center gap-2.5 text-xs font-bold text-cyan-950"
+                   draggable="true" @dragstart="onSidebarDragStart($event, b.type, 'timing')">
+                <i :class="b.icon + ' text-cyan-600'"></i>
+                <span x-text="b.label"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Category 5: Data Actions -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <div @click="activeCategory = activeCategory === 'data' ? '' : 'data'" class="bg-slate-50 p-3 font-bold text-xs text-slate-700 flex justify-between items-center cursor-pointer">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-database text-purple-500"></i> Data Actions (9)</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+          </div>
+          <div x-show="activeCategory === 'data'" class="p-2 space-y-1.5 bg-white border-t border-slate-100">
+            <template x-for="b in blockLibrary.data" :key="b.type">
+              <div class="p-2.5 bg-purple-50/60 border border-purple-100 rounded-lg cursor-grab active:cursor-grabbing hover:border-purple-300 transition-all flex items-center gap-2.5 text-xs font-bold text-purple-950"
+                   draggable="true" @dragstart="onSidebarDragStart($event, b.type, 'data')">
+                <i :class="b.icon + ' text-purple-600'"></i>
+                <span x-text="b.label"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Category 6: Exits -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <div @click="activeCategory = activeCategory === 'exits' ? '' : 'exits'" class="bg-slate-50 p-3 font-bold text-xs text-slate-700 flex justify-between items-center cursor-pointer">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-flag-checkered text-red-500"></i> Exits (4)</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+          </div>
+          <div x-show="activeCategory === 'exits'" class="p-2 space-y-1.5 bg-white border-t border-slate-100">
+            <template x-for="b in blockLibrary.exits" :key="b.type">
+              <div class="p-2.5 bg-red-50/60 border border-red-100 rounded-lg cursor-grab active:cursor-grabbing hover:border-red-300 transition-all flex items-center gap-2.5 text-xs font-bold text-red-950"
+                   draggable="true" @dragstart="onSidebarDragStart($event, b.type, 'exit')">
+                <i :class="b.icon + ' text-red-600'"></i>
+                <span x-text="b.label"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- CANVAS AREA -->
+      <div id="drawflow" class="flex-1 relative overflow-hidden" 
+           @dragover.prevent 
+           @drop="onSidebarDrop($event)">
+      </div>
+
+      <!-- MINI-MAP OVERLAY -->
+      <div id="minimap">
+        <div id="minimap-viewport" class="minimap-viewport"></div>
+      </div>
+
+      <!-- RIGHT-HAND NODE CONFIGURATION DRAWER -->
+      <aside x-show="selectedNode !== null" 
+             class="w-96 bg-white border-l border-slate-200 flex flex-col z-30 shadow-xl" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="transform translate-x-full"
+             x-transition:enter-end="transform translate-x-0">
+        
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="selectedNodeConfig.category + ' Block'"></span>
+            <h3 class="font-bold text-slate-800 text-sm" x-text="selectedNodeConfig.title"></h3>
+          </div>
+          <button @click="selectedNode = null" class="h-7 w-7 rounded-lg hover:bg-slate-200 text-slate-500 text-xs flex items-center justify-center">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="p-5 flex-1 overflow-y-auto space-y-5">
+          <div class="space-y-3">
+            <label class="block text-xs font-bold text-slate-700">Node Title Summary</label>
+            <input type="text" x-model="selectedNodeConfig.title" @input="updateCanvasNodeData()" class="w-full text-xs font-semibold p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-viber">
+          </div>
+
+          <template x-if="selectedNodeConfig.category === 'message'">
+            <div class="space-y-4 pt-2 border-t border-slate-100">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Message Class (2026 Rules)</label>
+                <select x-model="selectedNodeConfig.msgClass" class="w-full text-xs font-semibold p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-viber">
+                  <option value="promotional">Promotional (Marketing, Offers)</option>
+                  <option value="transactional">Transactional (OTP, Order Updates)</option>
+                  <option value="conversational">Conversational (Session Window)</option>
+                </select>
+              </div>
+
+              <div x-show="selectedNodeConfig.msgClass === 'transactional'" class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+                <span class="text-[10px] font-bold uppercase text-amber-800 flex items-center gap-1">
+                  <i class="fa-solid fa-lock"></i> Mandatory Template Required
+                </span>
+                <select x-model="selectedNodeConfig.templateId" class="w-full text-xs font-semibold p-2 bg-white border border-amber-300 rounded-lg">
+                  <option value="">Select Pre-approved Template...</option>
+                  <option value="tmpl_otp_v1">OTP Code Verification (Approved)</option>
+                  <option value="tmpl_shipping_v2">Shipping Status Alert (Approved)</option>
+                </select>
+              </div>
+
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-xs font-bold text-slate-700">Message Text</label>
+                  <span class="text-[10px] font-semibold text-slate-400" x-text="(selectedNodeConfig.text || '').length + ' / 1000'"></span>
+                </div>
+                <textarea x-model="selectedNodeConfig.text" @input="updateCanvasNodeData()" rows="4" maxlength="1000" placeholder="Write Viber text message..." class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl resize-none outline-none focus:border-viber"></textarea>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">Button Text</label>
+                  <input type="text" x-model="selectedNodeConfig.btnText" maxlength="30" placeholder="e.g. Claim Offer" class="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">Target URL</label>
+                  <input type="text" x-model="selectedNodeConfig.btnUrl" placeholder="https://..." class="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                </div>
+              </div>
+
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div class="flex justify-between items-center">
+                  <label class="text-xs font-bold text-slate-700">SMS Fallback Chain</label>
+                  <input type="checkbox" x-model="selectedNodeConfig.smsFallback" class="rounded text-viber">
+                </div>
+                <div x-show="selectedNodeConfig.smsFallback">
+                  <input type="text" x-model="selectedNodeConfig.smsText" maxlength="160" placeholder="Fallback SMS text..." class="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg">
+                </div>
+              </div>
+
+              <!-- LIVE SMARTPHONE SIMULATOR -->
+              <div class="pt-2">
+                <label class="block text-xs font-bold text-slate-700 mb-2">Live Viber Preview</label>
+                <div class="w-full bg-slate-900 rounded-3xl p-3 shadow-lg border-4 border-slate-800">
+                  <div class="bg-[#6f5cc3] text-white text-[10px] px-3 py-1.5 rounded-t-xl font-bold flex justify-between items-center">
+                    <span>Viber Official</span>
+                    <i class="fa-solid fa-check-circle"></i>
+                  </div>
+                  <div class="bg-[#e4e5eb] p-3 rounded-b-xl min-h-[120px] text-slate-900 text-xs space-y-2">
+                    <div class="bg-white p-2.5 rounded-xl shadow-sm space-y-2">
+                      <p class="whitespace-pre-wrap" x-text="selectedNodeConfig.text || 'Message preview will render here...'"></p>
+                      <template x-if="selectedNodeConfig.btnText">
+                        <div class="bg-[#7360f2] text-white font-bold text-[11px] text-center py-1.5 rounded-lg" x-text="selectedNodeConfig.btnText"></div>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </template>
+        </div>
+
+        <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-between">
+          <button @click="deleteSelectedNode()" class="text-xs font-bold text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg">Delete Node</button>
+          <button @click="selectedNode = null" class="bg-viber text-white text-xs font-bold px-4 py-2 rounded-lg">Apply Changes</button>
+        </div>
+
+      </aside>
+
+    </div>
+    </div><!-- /screen 2 -->
+  </main>
+
+  <script>
+    /* Sidebar Animation Toggle Handler */
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-collapsed');
+    }
+
+    let editor = null;
+
+    function getNodeTemplate(type, title, category, branches) {
+      const iconMap = {
+        trigger: 'fa-solid fa-bolt text-indigo-600',
+        message: 'fa-brands fa-viber text-emerald-600',
+        logic: 'fa-solid fa-code-branch text-amber-600',
+        timing: 'fa-regular fa-clock text-cyan-600',
+        data: 'fa-solid fa-database text-purple-600',
+        exit: 'fa-solid fa-flag-checkered text-red-600'
+      };
+
+      const bgMap = {
+        trigger: 'bg-indigo-50 border-indigo-100 text-indigo-700',
+        message: 'bg-emerald-50 border-emerald-100 text-emerald-700',
+        logic: 'bg-amber-50 border-amber-100 text-amber-700',
+        timing: 'bg-cyan-50 border-cyan-100 text-cyan-700',
+        data: 'bg-purple-50 border-purple-100 text-purple-700',
+        exit: 'bg-red-50 border-red-100 text-red-700'
+      };
+
+      if (category === 'logic') {
+        const yes = (branches && branches[0]) || 'If Approved';
+        const no  = (branches && branches[1]) || 'If Rejected';
+        return `
+          <div class="logic-node">
+            <div class="${bgMap[category]} border-b px-4 py-2.5 rounded-t-2xl flex justify-between items-center">
+              <span class="text-xs font-bold uppercase tracking-wider"><i class="${iconMap[category]} mr-1.5"></i> ${category}</span>
+            </div>
+            <div class="p-3 space-y-2">
+              <div class="font-bold text-xs text-slate-800 df-node-title">${title}</div>
+              <div class="space-y-1.5 pt-1 border-t border-slate-100">
+                <div class="flex justify-between items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                  <span>${yes}</span> <i class="fa-solid fa-arrow-right"></i>
+                </div>
+                <div class="flex justify-between items-center text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                  <span>${no}</span> <i class="fa-solid fa-arrow-right"></i>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      return `
+        <div class="${category}-node">
+          <div class="${bgMap[category]} border-b px-4 py-2.5 rounded-t-2xl flex justify-between items-center">
+            <span class="text-xs font-bold uppercase tracking-wider"><i class="${iconMap[category]} mr-1.5"></i> ${category}</span>
+          </div>
+          <div class="p-3">
+            <div class="font-bold text-xs text-slate-800 df-node-title">${title}</div>
+          </div>
+        </div>`;
+    }
+
+    function flowApp() {
+      return {
+        currentScreen: 'list',
+        searchQuery: '',
+        activeCategory: 'triggers',
+        selectedNode: null,
+        selectedNodeConfig: {},
+        activeFlow: { id: 1, name: 'Birthday Offer Flow', version: '1.2' },
+        validationErrors: [
+          'Node "Send Viber Offer" requires fallback SMS configured for non-reachable numbers.'
+        ],
+
+        /* Saved canvases, keyed by flow id. `from`/`to` index into `nodes`. */
+        flowBlueprints: {
+          // 1 — Birthday Greeting & Discount
+          1: {
+            validationErrors: [],
+            nodes: [
+              {
+                type: 'date_reached',
+                category: 'trigger',
+                x: 80,
+                y: 160,
+                title: 'Birthday Date Reached',
+                config: {
+                  dateField: 'contact.birthday',
+                  sendTime: '09:00',
+                  description: 'Fires on the contact\u2019s birthday, once per year.'
+                }
+              },
+              {
+                type: 'send_promo',
+                category: 'message',
+                x: 520,
+                y: 160,
+                title: 'Send Birthday Discount',
+                config: {
+                  msgClass: 'promotional',
+                  text: 'Happy Birthday, {{first_name}}! \ud83c\udf82\n\nHere is 20% off anything in store or online, from all of us at Acme Retail.\n\nYour code: BDAY20\nValid for 7 days.',
+                  btnText: 'Claim 20% Off',
+                  btnUrl: 'https://acme-retail.example/birthday',
+                  smsFallback: true,
+                  smsText: 'Happy Birthday! 20% off with code BDAY20, valid 7 days. acme-retail.example/birthday'
+                }
+              }
+            ],
+            connections: [
+              { from: 0, to: 1 }
+            ]
+          },
+
+          // 2 — OTP Security & 2FA Codes  (transactional, API / Webhook Event)
+          2: {
+            validationErrors: [],
+            nodes: [
+              { type: 'api_event', category: 'trigger', x: 40, y: 200, title: 'OTP Requested (API)',
+                config: { endpoint: 'POST /v1/otp/request', description: 'Fires when your backend requests a verification code.' } },
+              { type: 'send_template', category: 'message', x: 390, y: 200, title: 'Send OTP Code',
+                config: { msgClass: 'transactional', templateId: 'tmpl_otp_v1',
+                          text: 'Your Acme Retail verification code is {{otp_code}}.\n\nIt expires in 5 minutes. Never share this code with anyone.',
+                          btnText: '', btnUrl: '', smsFallback: true,
+                          smsText: 'Acme Retail code: {{otp_code}} (expires in 5 min). Do not share.' } },
+              { type: 'exit_outcome', category: 'exit', x: 740, y: 200, title: 'Code Delivered' }
+            ],
+            connections: [
+              { from: 0, to: 1 },
+              { from: 1, to: 2 }
+            ]
+          },
+
+          // 3 — Abandoned Cart Recovery  (promotional, E-commerce Event)
+          3: {
+            validationErrors: [],
+            nodes: [
+              { type: 'api_event', category: 'trigger', x: 40, y: 200, title: 'Cart Abandoned',
+                config: { endpoint: 'POST /v1/events/cart-abandoned', description: 'Fires 30 minutes after a cart is left unpaid.' } },
+              { type: 'delay', category: 'timing', x: 390, y: 200, title: 'Wait 1 Hour',
+                config: { duration: '1', unit: 'hours' } },
+              { type: 'send_promo', category: 'message', x: 740, y: 200, title: 'Cart Reminder + 10% Off',
+                config: { msgClass: 'promotional',
+                          text: 'Still thinking it over, {{first_name}}?\n\nYour cart is waiting. Here is 10% off to help you decide \u2014 code CART10, valid for 24 hours.',
+                          btnText: 'Return to Cart', btnUrl: 'https://acme-retail.example/cart',
+                          smsFallback: true, smsText: 'Your Acme cart is waiting. 10% off with CART10, 24h only. acme-retail.example/cart' } }
+            ],
+            connections: [
+              { from: 0, to: 1 },
+              { from: 1, to: 2 }
+            ]
+          },
+
+          // 4 — Shipping Status Notifications  (transactional, API / Webhook Event, draft)
+          4: {
+            validationErrors: [
+              'Draft flow \u2014 publish it to start sending shipping alerts.'
+            ],
+            nodes: [
+              { type: 'api_event', category: 'trigger', x: 40, y: 190, title: 'Shipment Status Webhook',
+                config: { endpoint: 'POST /v1/events/shipment', description: 'Fires on every carrier status change.' } },
+              { type: 'if_else', category: 'logic', x: 390, y: 180, title: 'Out For Delivery?',
+                branches: ['Out For Delivery', 'Still In Transit'] },
+              { type: 'send_template', category: 'message', x: 740, y: 70, title: 'Arriving Today Alert',
+                config: { msgClass: 'transactional', templateId: 'tmpl_shipping_v2',
+                          text: 'Good news {{first_name}} \u2014 order {{order_id}} is out for delivery and arrives today.',
+                          btnText: 'Track Parcel', btnUrl: 'https://acme-retail.example/track',
+                          smsFallback: true, smsText: 'Order {{order_id}} is out for delivery today. Track: acme-retail.example/track' } },
+              { type: 'send_template', category: 'message', x: 740, y: 310, title: 'Tracking Update',
+                config: { msgClass: 'transactional', templateId: 'tmpl_shipping_v2',
+                          text: 'Order {{order_id}} is on its way. Current status: {{status}}. Estimated delivery {{eta}}.',
+                          btnText: 'Track Parcel', btnUrl: 'https://acme-retail.example/track',
+                          smsFallback: true, smsText: 'Order {{order_id}}: {{status}}. ETA {{eta}}.' } }
+            ],
+            connections: [
+              { from: 0, to: 1 },
+              { from: 1, to: 2, output: 'output_1' },
+              { from: 1, to: 3, output: 'output_2' }
+            ]
+          },
+
+          // 5 — Customer Satisfaction Survey  (promotional, Inbound Reply)
+          5: {
+            validationErrors: [],
+            nodes: [
+              { type: 'inbound_msg', category: 'trigger', x: 40, y: 190, title: 'Order Delivered Reply',
+                config: { description: 'Fires when a customer replies after delivery is confirmed.' } },
+              { type: 'ask_question', category: 'message', x: 340, y: 190, title: 'Ask: Rate Us 1\u20135',
+                config: { msgClass: 'promotional',
+                          text: 'Thanks for shopping with us, {{first_name}}!\n\nHow would you rate your order? Reply with a number from 1 (poor) to 5 (excellent).',
+                          btnText: '', btnUrl: '', smsFallback: false, smsText: '' } },
+              { type: 'if_else', category: 'logic', x: 640, y: 180, title: 'Score 4 Or Higher?',
+                branches: ['Promoter (4\u20135)', 'Detractor (1\u20133)'] },
+              { type: 'send_promo', category: 'message', x: 940, y: 70, title: 'Ask For A Public Review',
+                config: { msgClass: 'promotional',
+                          text: 'That is wonderful to hear, {{first_name}}! Would you share it publicly? It takes about a minute.',
+                          btnText: 'Leave A Review', btnUrl: 'https://acme-retail.example/review',
+                          smsFallback: false, smsText: '' } },
+              { type: 'human_handoff', category: 'message', x: 940, y: 310, title: 'Hand Off To Support Agent',
+                config: { msgClass: 'promotional',
+                          text: 'We are sorry your order fell short, {{first_name}}. A support agent is joining this chat now to put it right.',
+                          btnText: '', btnUrl: '', smsFallback: false, smsText: '' } }
+            ],
+            connections: [
+              { from: 0, to: 1 },
+              { from: 1, to: 2 },
+              { from: 2, to: 3, output: 'output_1' },
+              { from: 2, to: 4, output: 'output_2' }
+            ]
+          }
+        },
+
+        // AUTOMATIONS LIST WITH DISTINCT ICONS & GRADIENT BADGES
+        flows: [
+          { 
+            id: 1, 
+            name: 'Birthday Greeting & Discount', 
+            type: 'promotional', 
+            trigger: 'Date Field Reached', 
+            updated: '2026-08-20', 
+            status: 'published', 
+            stats: '1,420 Runs', 
+            icon: 'fa-solid fa-cake-candles',
+            bgGradient: 'bg-gradient-to-br from-purple-100 to-indigo-100 border border-purple-200',
+            iconColor: 'text-purple-600'
+          },
+          { 
+            id: 2, 
+            name: 'OTP Security & 2FA Codes', 
+            type: 'transactional', 
+            trigger: 'API / Webhook Event', 
+            updated: '2026-08-25', 
+            status: 'published', 
+            stats: '12,890 Runs', 
+            icon: 'fa-solid fa-shield-halved',
+            bgGradient: 'bg-gradient-to-br from-emerald-100 to-teal-100 border border-emerald-200',
+            iconColor: 'text-emerald-600'
+          },
+          { 
+            id: 3, 
+            name: 'Abandoned Cart Recovery', 
+            type: 'promotional', 
+            trigger: 'E-commerce Event', 
+            updated: '2026-08-22', 
+            status: 'published', 
+            stats: '4,310 Runs', 
+            icon: 'fa-solid fa-cart-shopping',
+            bgGradient: 'bg-gradient-to-br from-amber-100 to-orange-100 border border-amber-200',
+            iconColor: 'text-amber-600'
+          },
+          { 
+            id: 4, 
+            name: 'Shipping Status Notifications', 
+            type: 'transactional', 
+            trigger: 'API / Webhook Event', 
+            updated: '2026-08-18', 
+            status: 'draft', 
+            stats: '0 Runs', 
+            icon: 'fa-solid fa-truck-fast',
+            bgGradient: 'bg-gradient-to-br from-blue-100 to-cyan-100 border border-blue-200',
+            iconColor: 'text-blue-600'
+          },
+          { 
+            id: 5, 
+            name: 'Customer Satisfaction Survey', 
+            type: 'promotional', 
+            trigger: 'Inbound Reply', 
+            updated: '2026-08-10', 
+            status: 'published', 
+            stats: '890 Runs', 
+            icon: 'fa-solid fa-comments',
+            bgGradient: 'bg-gradient-to-br from-pink-100 to-rose-100 border border-pink-200',
+            iconColor: 'text-pink-600'
+          }
+        ],
+
+        // 46 Blocks Palette Categorized
+        blockLibrary: {
+          triggers: [
+            { type: 'api_event', label: 'API / Webhook Event', icon: 'fa-solid fa-bolt' },
+            { type: 'segment_entry', label: 'Enters Segment', icon: 'fa-solid fa-users' },
+            { type: 'date_reached', label: 'Date Field Reached', icon: 'fa-solid fa-calendar' },
+            { type: 'inbound_msg', label: 'Inbound Message', icon: 'fa-solid fa-comment-dots' },
+            { type: 'campaign_start', label: 'Manual Launch', icon: 'fa-solid fa-paper-plane' }
+          ],
+          messaging: [
+            { type: 'send_template', label: 'Send Viber Template', icon: 'fa-solid fa-file-contract' },
+            { type: 'send_promo', label: 'Send Promotional', icon: 'fa-brands fa-viber' },
+            { type: 'sms_fallback', label: 'SMS Fallback', icon: 'fa-solid fa-message' },
+            { type: 'ask_question', label: 'Ask a Question', icon: 'fa-solid fa-circle-question' },
+            { type: 'human_handoff', label: 'Hand Off to Agent', icon: 'fa-solid fa-headset' }
+          ],
+          logic: [
+            { type: 'if_else', label: 'If / Else Branch', icon: 'fa-solid fa-code-branch' },
+            { type: 'wait_event', label: 'Wait for Event', icon: 'fa-solid fa-hourglass-half' },
+            { type: 'switch', label: 'Multi-Branch Switch', icon: 'fa-solid fa-list-check' },
+            { type: 'ab_split', label: 'A/B Split Test', icon: 'fa-solid fa-vials' }
+          ],
+          timing: [
+            { type: 'delay', label: 'Delay Timer', icon: 'fa-regular fa-clock' },
+            { type: 'time_window', label: 'Wait for Time Window', icon: 'fa-solid fa-business-time' },
+            { type: 'quiet_hours', label: 'Quiet Hours Guard', icon: 'fa-solid fa-moon' }
+          ],
+          data: [
+            { type: 'update_field', label: 'Update Contact Field', icon: 'fa-solid fa-pen-to-square' },
+            { type: 'add_tag', label: 'Add / Remove Tag', icon: 'fa-solid fa-tag' },
+            { type: 'http_request', label: 'HTTP API Call', icon: 'fa-solid fa-network-wired' },
+            { type: 'opt_out', label: 'Opt Out Contact', icon: 'fa-solid fa-user-slash' }
+          ],
+          exits: [
+            { type: 'end', label: 'End Flow', icon: 'fa-solid fa-flag-checkered' },
+            { type: 'exit_outcome', label: 'Exit with Outcome', icon: 'fa-solid fa-arrow-right-from-bracket' }
+          ]
+        },
+
+        get filteredFlows() {
+          if (!this.searchQuery) return this.flows;
+          return this.flows.filter(f => f.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+        },
+
+        openFlow(item) {
+          this.activeFlow = { version: '1.0', ...item };
+          this.currentScreen = 'builder';
+          
+          this.$nextTick(() => {
+            this.initDrawflow();
+            this.seedWorkflow(item);
+          });
+        },
+
+        createNewFlow() {
+          this.activeFlow = { id: Date.now(), name: 'New Viber Sequence', version: '1.0', status: 'draft' };
+          this.currentScreen = 'builder';
+          
+          this.$nextTick(() => {
+            this.initDrawflow();
+            editor.clear();
+            this.updateMinimap();
+          });
+        },
+
+        initDrawflow() {
+          const container = document.getElementById("drawflow");
+          container.innerHTML = '';
+
+          if (!container.dataset.dragClassBound) {
+            container.dataset.dragClassBound = 'true';
+            container.addEventListener('mousedown', () => container.classList.add('is-dragging'));
+            document.addEventListener('mouseup', () => container.classList.remove('is-dragging'));
+          }
+          
+          editor = new Drawflow(container);
+
+          editor.reroute = true;
+          editor.reroute_fix_curvature = false;
+          editor.curvature = 0.5;
+          editor.zoom_min = 0.3;
+          editor.zoom_max = 1.6;
+
+          editor.start();
+
+          editor.on('nodeSelected', (id) => {
+            this.selectedNode = id;
+            const nodeData = editor.getNodeFromId(id);
+            this.selectedNodeConfig = nodeData.data.config || {
+              title: nodeData.name,
+              category: nodeData.class.replace('-node', ''),
+              text: 'Special Viber Offer: Get 20% off your purchase!',
+              btnText: 'Claim Offer Now',
+              msgClass: 'promotional',
+              smsFallback: true
+            };
+          });
+
+          let minimapTimer = null;
+          const throttledMinimap = () => {
+            if (minimapTimer) return;
+            minimapTimer = requestAnimationFrame(() => {
+              this.updateMinimap();
+              minimapTimer = null;
+            });
+          };
+
+          editor.on('drawflow.render', throttledMinimap);
+          editor.on('nodeMoved', throttledMinimap);
+          editor.on('translate', throttledMinimap);
+          editor.on('zoom', throttledMinimap);
+        },
+
+        /* Pre-built canvas for a saved flow. Blueprints are keyed by flow id;
+           anything without one falls back to the generic sample below. */
+        seedWorkflow(flow) {
+          editor.clear();
+
+          const blueprint = this.flowBlueprints[flow && flow.id];
+          if (blueprint) {
+            this.validationErrors = blueprint.validationErrors || [];
+            const ids = blueprint.nodes.map(n =>
+              this.addNodeToEngine(n.type, n.category, n.x, n.y, n.title,
+                                   { ...n.config, ...(n.branches ? { branches: n.branches } : {}) })
+            );
+            blueprint.connections.forEach(c =>
+              editor.addConnection(ids[c.from], ids[c.to], c.output || 'output_1', c.input || 'input_1')
+            );
+          } else {
+            this.seedGenericSample();
+          }
+
+          this.refreshConnections();
+          this.updateMinimap();
+        },
+
+        /* Drawflow derives every connection path from the canvas dimensions.
+           Right after the builder is revealed the canvas can still measure 0x0,
+           which makes that maths collapse each path to "M 0 0" — nodes show up
+           (they position from inline left/top) but the lines are invisible.
+           Recompute the paths once the canvas has real dimensions. */
+        refreshConnections(attempt = 0) {
+          requestAnimationFrame(() => {
+            if (!editor) return;
+
+            const canvas = document.getElementById('drawflow');
+            if ((!canvas || canvas.clientWidth === 0) && attempt < 30) {
+              this.refreshConnections(attempt + 1);
+              return;
+            }
+
+            const module = editor.drawflow.drawflow[editor.module];
+            Object.keys((module && module.data) || {})
+              .forEach(id => editor.updateConnectionNodes('node-' + id));
+
+            this.fitCanvasToFlow();
+            this.updateMinimap();
+          });
+        },
+
+        /* Zoom out just enough that every block of a seeded flow is on screen,
+           so a saved automation reads end-to-end without panning. */
+        fitCanvasToFlow() {
+          const canvas = document.getElementById('drawflow');
+          const nodes = canvas ? [...canvas.querySelectorAll('.drawflow-node')] : [];
+          if (!nodes.length || !canvas.clientWidth) return;
+
+          const PADDING = 48;
+          const width  = Math.max(...nodes.map(n => n.offsetLeft + n.offsetWidth));
+          const height = Math.max(...nodes.map(n => n.offsetTop + n.offsetHeight));
+
+          const fit = Math.min(
+            1,
+            (canvas.clientWidth  - PADDING) / width,
+            (canvas.clientHeight - PADDING) / height
+          );
+
+          /* Never shrink past the point where labels stop being crisp: below
+             about 90% the 12px node text lands on fractional pixels and reads
+             blurry. A flow too wide for the canvas is pannable instead. */
+          const MIN_READABLE = 0.9;
+          editor.zoom = Math.max(MIN_READABLE, Math.floor(fit * 20) / 20);
+          editor.zoom_refresh();
+        },
+
+        seedGenericSample() {
+          this.validationErrors = [
+            'Node "Send Viber Offer" requires fallback SMS configured for non-reachable numbers.'
+          ];
+
+          const trigger = this.addNodeToEngine('date_reached', 'trigger', 80, 150, 'On Birthday Event');
+          const branch  = this.addNodeToEngine('if_else', 'logic', 400, 130, 'Has Claimed Offer?');
+          const offer   = this.addNodeToEngine('send_promo', 'message', 760, 60, 'Send Viber Offer');
+          const exit    = this.addNodeToEngine('end', 'exit', 760, 280, 'Exit Flow');
+
+          editor.addConnection(trigger, branch, 'output_1', 'input_1');
+          editor.addConnection(branch, offer, 'output_1', 'input_1');
+          editor.addConnection(branch, exit, 'output_2', 'input_1');
+        },
+
+        addNodeToEngine(type, category, posX, posY, title = "", configOverrides = {}) {
+          const html = getNodeTemplate(type, title || type, category, configOverrides.branches);
+          const configData = {
+            title: title || type,
+            category: category,
+            type: type,
+            text: 'Special Viber Offer: Get 20% off your purchase!',
+            btnText: 'Claim Offer Now',
+            msgClass: 'promotional',
+            ...configOverrides
+          };
+
+          let inputs = 1, outputs = 1;
+          if (category === 'logic')        { inputs = 1; outputs = 2; }
+          else if (category === 'trigger') { inputs = 0; outputs = 1; }
+          else if (category === 'exit')    { inputs = 1; outputs = 0; }
+
+          const nodeId = editor.addNode(
+            type, inputs, outputs, posX, posY,
+            `${category}-node`, { config: configData }, html
+          );
+
+          this.updateMinimap();
+          return nodeId;
+        },
+
+        onSidebarDragStart(event, type, category) {
+          event.dataTransfer.setData('nodeType', type);
+          event.dataTransfer.setData('nodeCategory', category);
+        },
+
+        onSidebarDrop(event) {
+          const type = event.dataTransfer.getData('nodeType');
+          const category = event.dataTransfer.getData('nodeCategory');
+          if (!type || !editor) return;
+
+          const canvas = document.getElementById("drawflow");
+          const rect = canvas.getBoundingClientRect();
+          const posX = (event.clientX - rect.left) * (editor.precalc_attribute || 1) - editor.canvas_x;
+          const posY = (event.clientY - rect.top) * (event.precalc_attribute || 1) - editor.canvas_y;
+
+          this.addNodeToEngine(type, category, posX, posY);
+        },
+
+        updateCanvasNodeData() {
+          if (!this.selectedNode) return;
+          const el = document.querySelector(`#node-${this.selectedNode} .df-node-title`);
+          if (el) el.innerText = this.selectedNodeConfig.title;
+        },
+
+        deleteSelectedNode() {
+          if (this.selectedNode) {
+            editor.removeNodeId(`node-${this.selectedNode}`);
+            this.selectedNode = null;
+          }
+        },
+
+        updateMinimap() {
+          if (!editor) return;
+          const minimap = document.getElementById('minimap');
+          const viewport = document.getElementById('minimap-viewport');
+          const data = editor.export().drawflow.Home.data;
+
+          minimap.querySelectorAll('.minimap-node').forEach(el => el.remove());
+
+          const mapWidth = 180;
+          const mapHeight = 120;
+          const scale = 0.07;
+
+          Object.values(data).forEach(node => {
+            const miniNode = document.createElement('div');
+            miniNode.className = 'minimap-node';
+            miniNode.style.left = (node.pos_x * scale + 20) + 'px';
+            miniNode.style.top = (node.pos_y * scale + 20) + 'px';
+            miniNode.style.width = '16px';
+            miniNode.style.height = '10px';
+
+            if (node.class.includes('trigger')) miniNode.style.background = '#6366f1';
+            else if (node.class.includes('message')) miniNode.style.background = '#10b981';
+            else if (node.class.includes('logic')) miniNode.style.background = '#f59e0b';
+            else miniNode.style.background = '#ef4444';
+
+            minimap.appendChild(miniNode);
+          });
+
+          viewport.style.left = (-editor.canvas_x * scale * 0.5) + 'px';
+          viewport.style.top = (-editor.canvas_y * scale * 0.5) + 'px';
+          viewport.style.width = (mapWidth / editor.zoom) + 'px';
+          viewport.style.height = (mapHeight / editor.zoom) + 'px';
+        },
+
+        zoomIn() { if (editor) editor.zoom_in(); },
+        zoomOut() { if (editor) editor.zoom_out(); },
+        zoomReset() { if (editor) editor.zoom_reset(); },
+        clearCanvas() { if (editor) { editor.clear(); this.updateMinimap(); } },
+        backToList() { this.currentScreen = 'list'; },
+        saveFlow() { alert('Viber Automation Flow saved successfully!'); this.backToList(); }
+      };
+    }
+  </script>
+</body>
+</html>

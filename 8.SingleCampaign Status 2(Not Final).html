@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSG PLS - Campaigns Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      /* Brand Palette */
+      --color-purple: #7360F2;
+      --color-purple-hover: #5746be;
+      --color-purple-bg: rgba(115, 96, 242, 0.1);
+
+      --danger: #ea5455;
+      --danger-light: #fceaea;
+      --success: #28c76f;
+      --success-hover: #24b263;
+      --success-light: #e5f8ed;
+      --warning: #ff9f43;
+      --warning-light: #fff0e1;
+
+      --text-dark: #1e1e1e;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --bg-light: #f8fafc;
+      --sidebar-width: 250px;
+      --sidebar-collapsed-width: 70px;
+      --header-height: 68px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { display: flex; background-color: #f4f5fa; color: var(--text-dark); min-height: 100vh; overflow: hidden; }
+
+    /* Navigation Sidebar */
+    aside {
+      width: var(--sidebar-width);
+      background-color: #ffffff;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100vh;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    body.sidebar-collapsed aside { width: var(--sidebar-collapsed-width); }
+
+    .brand {
+      height: var(--header-height);
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      height: 38px;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      overflow: hidden;
+    }
+
+    .brand-logo-container img { height: 38px; width: auto; object-fit: contain; }
+    body.sidebar-collapsed .brand-logo-container { opacity: 0; visibility: hidden; }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--text-dark);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .hamburger-btn:hover { background-color: var(--color-purple-bg); color: var(--color-purple); }
+
+    .nav-list-wrapper { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 8px; }
+    .nav-list-wrapper::-webkit-scrollbar { width: 4px; }
+    .nav-list-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .nav-list { list-style: none; }
+    .unread-pulse-dot {
+      width: 9px;
+      height: 9px;
+      background-color: var(--danger);
+      border-radius: 50%;
+      position: absolute;
+      right: 14px;
+      box-shadow: 0 0 0 2px #ffffff;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(234, 84, 85, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0); }
+    }
+    .nav-item {
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 500;
+      margin-bottom: 4px;
+      transition: background-color 0.2s, color 0.2s;
+      height: 44px;
+      text-decoration: none;
+      position: relative;
+    }
+    .nav-item i { font-size: 18px; min-width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-item span { transition: opacity 0.2s ease, visibility 0.2s ease; }
+    body.sidebar-collapsed .nav-item span { opacity: 0; visibility: hidden; }
+
+    .nav-item:hover { background-color: var(--bg-light); color: var(--text-dark); }
+    .nav-item.active { background-color: var(--color-purple-bg); color: var(--color-purple); font-weight: 600; }
+
+    .version-tag { padding: 16px 20px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+    body.sidebar-collapsed .version-tag span { display: none; }
+
+    /* Main Layout */
+    main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    header {
+      background: #ffffff;
+      height: var(--header-height);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+
+    .user-profile { display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; }
+
+    .workspace { flex: 1; display: flex; flex-direction: column; padding: 24px 32px; overflow-y: auto; }
+    .page-view { display: none; flex-direction: column; flex: 1; }
+    .page-view.active { display: flex; }
+
+    .sticky-top-block { position: sticky; top: 0; z-index: 90; background-color: #f4f5fa; padding-bottom: 12px; flex-shrink: 0; }
+    .page-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .page-title { font-size: 26px; font-weight: 700; }
+    .action-group { display: flex; gap: 12px; align-items: center; }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-purple { background-color: var(--color-purple); color: #ffffff; }
+    .btn-purple:hover { background-color: var(--color-purple-hover); transform: translateY(-1px); }
+    .btn-outline { background-color: #ffffff; border-color: var(--border-color); color: var(--text-dark); }
+    .btn-outline:hover { background-color: var(--bg-light); border-color: #cbd5e1; transform: translateY(-1px); }
+    .btn-danger { background-color: var(--danger-light); color: var(--danger); border-color: rgba(234, 84, 85, 0.2); }
+    .btn-danger:hover { background-color: #f8d7d7; }
+
+    /* Compact Top Analytics Bar */
+    .compact-kpi-bar {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 8px 18px;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .kpi-compact-item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .kpi-compact-label { color: var(--text-muted); font-weight: 500; }
+    .kpi-compact-value { font-weight: 700; color: var(--text-dark); }
+    .kpi-divider { width: 1px; height: 14px; background-color: var(--border-color); }
+
+    /* Filters Bar */
+    .filter-card { background: #fff; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; gap: 16px; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.03); flex-wrap: wrap; }
+    .search-input-wrapper { position: relative; flex: 2; min-width: 240px; }
+    .search-input-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .search-input { width: 100%; height: 38px; padding: 0 14px 0 38px; font-size: 13px; border: 1px solid var(--border-color); border-radius: 8px; outline: none; }
+    .search-input:focus { border-color: var(--color-purple); }
+
+    .filter-select-group { display: flex; flex: 3; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .filter-select-wrapper { position: relative; flex: 1; min-width: 140px; }
+    .filter-label { position: absolute; top: -7px; left: 10px; background: #ffffff; padding: 0 4px; font-size: 10px; font-weight: 600; color: var(--text-muted); border-radius: 2px; z-index: 2; line-height: 1; }
+    .filter-select { width: 100%; height: 38px; padding: 0 12px; font-size: 13px; border: 1px solid var(--border-color); border-radius: 8px; outline: none; background: #ffffff; color: var(--text-dark); cursor: pointer; }
+
+    /* Table Component */
+    .table-card { background: #ffffff; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; flex: 1; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .table-scroll-container { flex: 1; overflow: auto; position: relative; }
+    table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+    th, td { padding: 14px 24px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+    th { position: sticky; top: 0; background-color: #f8fafc; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; z-index: 10; cursor: pointer; user-select: none; }
+    tbody tr.clickable-row { cursor: pointer; transition: background-color 0.15s ease; }
+    tbody tr.clickable-row:hover { background-color: var(--color-purple-bg); }
+
+    .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; width: 130px; opacity: 0; transition: opacity 0.2s ease-in-out; }
+    tbody tr:hover .row-actions { opacity: 1; }
+    .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 14px; padding: 4px; border-radius: 4px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .icon-btn:hover { color: var(--color-purple); background-color: rgba(104, 87, 213, 0.1); }
+    .icon-btn.start-btn { background: transparent; color: var(--success); font-size: 13px; }
+    .icon-btn.start-btn:hover { background: transparent; color: var(--success); box-shadow: 0 2px 8px rgba(40, 199, 111, 0.35); }
+    .icon-btn.danger-hover:hover { color: var(--danger); background-color: var(--danger-light); }
+
+    .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; }
+    .status-badge.initial { background-color: #e0f2fe; color: #0284c7; }
+    .status-badge.started { background-color: var(--warning-light); color: #d97706; }
+    .status-badge.finished { background-color: #f1f5f9; color: #475569; }
+    .status-badge.cancelled { background-color: var(--danger-light); color: var(--danger); }
+
+    .countdown-chip { font-size: 11px; font-weight: 600; color: #0284c7; background: #f0f9ff; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; }
+
+    .rate-container { display: flex; align-items: center; gap: 10px; min-width: 100px; }
+    .progress-bar-bg { flex: 1; height: 6px; background-color: #e2e8f0; border-radius: 3px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background-color: var(--color-purple); border-radius: 3px; }
+
+    .pagination-bar { padding: 12px 24px; border-top: 1px solid var(--border-color); background-color: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; font-size: 13px; color: var(--text-muted); }
+
+    /* Single Campaign Detailed Analytic View UI */
+    .breadcrumb-nav { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+    .breadcrumb-nav span.link { color: var(--color-purple); font-weight: 600; cursor: pointer; }
+    .breadcrumb-nav span.link:hover { text-decoration: underline; }
+
+    .detail-layout { display: flex; gap: 24px; align-items: flex-start; }
+    .detail-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+    .detail-sidebar { width: 320px; flex-shrink: 0; position: sticky; top: 12px; }
+
+    /* KPI Cards Row (6 Metric Cards) */
+    .kpi-cards-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+    .metric-card { background: #ffffff; border-radius: 12px; border: 1px solid var(--border-color); padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .metric-card-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .metric-card-val { font-size: 20px; font-weight: 700; color: var(--text-dark); }
+    .metric-card-sub { font-size: 11px; margin-top: 4px; color: var(--text-muted); }
+
+    .metric-card.alert-card { background: #fff5f5; border-color: #feb2b2; }
+    .metric-card.alert-card .metric-card-title { color: #c53030; }
+    .metric-card.alert-card .metric-card-val { color: #e53e3e; }
+
+    /* Visual Analytics Panel */
+    .analytics-section { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+    .analytics-panel { background: #ffffff; border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); display: flex; flex-direction: column; }
+    .panel-header { font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Conversion Funnel Widget */
+    .funnel-container { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+    .funnel-step { display: flex; flex-direction: column; gap: 4px; }
+    .funnel-label-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; }
+    .funnel-bar-bg { height: 26px; background: var(--bg-light); border-radius: 6px; overflow: hidden; position: relative; border: 1px solid var(--border-color); }
+    .funnel-bar-fill { height: 100%; border-radius: 5px; transition: width 0.5s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; color: #ffffff; font-size: 11px; font-weight: 700; }
+    .funnel-drop-badge { font-size: 11px; color: var(--text-muted); align-self: center; background: #f1f5f9; padding: 2px 8px; border-radius: 10px; margin: -4px 0; z-index: 2; border: 1px solid var(--border-color); }
+
+    /* Additional Metrics Grid */
+    .secondary-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .sec-stat-box { background: var(--bg-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; }
+    .sec-stat-title { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .sec-stat-val { font-size: 16px; font-weight: 700; color: var(--text-dark); margin-top: 2px; }
+
+    /* Audit Log Container */
+    .audit-log-card { background: #ffffff; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .audit-log-toolbar { padding: 14px 18px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .audit-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .audit-chip { padding: 4px 10px; border-radius: 16px; border: 1px solid var(--border-color); background: #ffffff; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+    .audit-chip.active { background: var(--color-purple-bg); border-color: var(--color-purple); color: var(--color-purple); }
+
+    /* Modal Architecture */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .split-modal { background: #ffffff; border-radius: 16px; width: 1020px; max-width: 95%; height: 660px; max-height: 92vh; display: flex; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; }
+    .split-modal-left { flex: 1.25; display: flex; flex-direction: column; padding: 28px 32px; background: #ffffff; border-right: 1px solid #f1f5f9; }
+    .split-modal-title { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 24px; }
+
+    .stepper-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; position: relative; }
+    .stepper-item { display: flex; align-items: center; gap: 8px; z-index: 2; position: relative; background: #ffffff; padding: 0 6px; }
+    .stepper-circle { width: 28px; height: 28px; border-radius: 50%; background-color: #e2e8f0; color: #64748b; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .stepper-item.completed .stepper-circle, .stepper-item.active .stepper-circle { background-color: var(--color-purple); color: #ffffff; }
+    .stepper-label { font-size: 12px; font-weight: 600; color: #94a3b8; }
+    .stepper-item.active .stepper-label { color: var(--color-purple); font-weight: 700; }
+    .stepper-line { position: absolute; top: 14px; left: 0; right: 0; height: 2px; background: #e2e8f0; z-index: 1; }
+
+    .wizard-step-panel { display: none; flex-direction: column; gap: 22px; flex: 1; overflow-y: auto; }
+    .wizard-step-panel.active { display: flex; }
+
+    .floating-fieldset { position: relative; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px 14px 10px 14px; background: #ffffff; margin-top: 4px; }
+    .floating-label { position: absolute; top: -10px; left: 12px; background: #ffffff; padding: 0 6px; font-size: 11px; font-weight: 600; color: #64748b; line-height: 1; z-index: 5; }
+    .fieldset-input, .fieldset-select { width: 100%; border: none; outline: none; font-size: 14px; color: #0f172a; background: transparent; }
+
+    .split-modal-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 18px; border-top: 1px solid #f1f5f9; margin-top: auto; }
+    .split-modal-right { flex: 0.85; background: #f8fafc; display: flex; align-items: center; justify-content: center; padding: 24px; }
+
+    /* Phone Preview Mockup */
+    .phone-mockup { width: 270px; height: 490px; background: #ffffff; border-radius: 36px; border: 8px solid #1e1b2e; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12); display: flex; flex-direction: column; overflow: hidden; }
+    .phone-top-bar { padding: 10px 16px 6px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; color: #0f172a; }
+    .phone-nav-header { padding: 6px 14px 10px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; }
+    .phone-chat-area { flex: 1; background: #f8fafc; padding: 14px 10px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+    .phone-bubble { color: #1e293b; padding: 10px 12px; border-radius: 14px; max-width: 85%; font-size: 11px; line-height: 1.4; word-break: break-word; }
+    .phone-bubble.outbound { background: #f1f5f9; align-self: flex-end; border-bottom-right-radius: 2px; }
+    .phone-bubble.inbound { background: var(--color-purple-bg); color: var(--color-purple); align-self: flex-start; border-bottom-left-radius: 2px; }
+    .phone-bubble-time { font-size: 8px; color: #94a3b8; text-align: right; margin-top: 4px; }
+
+    .tag-pill { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--color-purple); color: var(--color-purple); background: #ffffff; font-size: 12px; font-weight: 600; cursor: pointer; margin: 4px; }
+    .tag-pill.selected { background: var(--color-purple); color: #ffffff; }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Sidebar -->
+  <aside id="sidebar">
+    <div class="brand">
+      <button class="hamburger-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+      <div class="brand-logo-container"><img src="logoNew.png" alt="MSG PLS Logo" /></div>
+    </div>
+    <div class="nav-list-wrapper">
+      <ul class="nav-list">
+        <li><a class="nav-item" href="4.Dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+        <li>
+          <a class="nav-item" href="5.Messages.html">
+            <i class="fa-solid fa-comments"></i>
+            <span>Messages</span>
+            <div class="unread-pulse-dot" id="sidebarUnreadDot" title="New unread replies"></div>
+          </a>
+        </li>
+        <li><a class="nav-item" href="6.template.html"><i class="fa-solid fa-layer-group"></i> <span>Templates</span></a></li>
+        <li><a class="nav-item" href="7.Recipients.html"><i class="fa-solid fa-users"></i> <span>Recipients</span></a></li>
+        <li><a class="nav-item active" href="8.Campaign%20(not%20final%202).html"><i class="fa-solid fa-bullhorn"></i> <span>Campaigns</span></a></li>
+        <li><a class="nav-item" href="9.Automations%20(not%20final).html"><i class="fa-solid fa-robot"></i> <span>Automations</span></a></li>
+        <li><a class="nav-item" href="#" onclick="return false;" title="Coming soon"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+      </ul>
+    </div>
+    <div class="version-tag"><span>v0.7.0</span></div>
+  </aside>
+
+  <!-- Workspace Container -->
+  <main>
+    <header>
+      <div class="user-profile"><i class="fa-solid fa-circle-user fa-lg" style="color: var(--color-purple)"></i> acme-retail <i class="fa-solid fa-angle-down"></i></div>
+    </header>
+
+    <div class="workspace">
+      
+      <!-- PAGE VIEW 1: CAMPAIGNS LIST -->
+      <div id="list-view" class="page-view active">
+        <div class="sticky-top-block">
+          <div class="page-title-row">
+            <h1 class="page-title">Campaigns</h1>
+            <div class="action-group">
+              <button class="btn btn-purple" onclick="openCreateWizard()"><i class="fa-solid fa-plus"></i> Create Campaign</button>
+            </div>
+          </div>
+
+          <!-- Filter Controls -->
+          <div class="filter-card">
+            <div class="search-input-wrapper">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="searchInput" class="search-input" placeholder="Search campaigns..." oninput="handleFilters()" />
+            </div>
+            <div class="filter-select-group">
+              <div class="filter-select-wrapper">
+                <span class="filter-label">Status</span>
+                <select id="statusFilter" class="filter-select" onchange="handleFilters()">
+                  <option value="All">All Statuses</option>
+                  <option value="Initial">Initial</option>
+                  <option value="Started">Started</option>
+                  <option value="Finished">Finished</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="filter-select-wrapper">
+                <span class="filter-label">Type</span>
+                <select id="typeFilter" class="filter-select" onchange="handleFilters()">
+                  <option value="All Types">All Types</option>
+                  <option value="Regular">Regular</option>
+                  <option value="Direct">Direct</option>
+                  <option value="Scheduled">Scheduled</option>
+                </select>
+              </div>
+              <button class="btn btn-outline" style="height: 38px;" onclick="resetFilters()"><i class="fa-solid fa-filter-circle-xmark"></i> Clear</button>
+            </div>
+          </div>
+
+          <!-- Compact Single-Line KPI Bar -->
+          <div class="compact-kpi-bar">
+            <div class="kpi-compact-item">
+              <span class="kpi-compact-label">Total Campaigns:</span>
+              <span class="kpi-compact-value" id="statTotalCampaigns">12</span>
+            </div>
+            <div class="kpi-divider"></div>
+            <div class="kpi-compact-item">
+              <span class="kpi-compact-label">Total Sent:</span>
+              <span class="kpi-compact-value" style="color: var(--color-purple);" id="statTotalSent">148,500</span>
+            </div>
+            <div class="kpi-divider"></div>
+            <div class="kpi-compact-item">
+              <span class="kpi-compact-label">Sent This Month:</span>
+              <span class="kpi-compact-value" style="color: #0284c7;" id="statSentThisMonth">18,450</span>
+            </div>
+            <div class="kpi-divider"></div>
+            <div class="kpi-compact-item">
+              <span class="kpi-compact-label">Remaining Plan:</span>
+              <span class="kpi-compact-value" style="color: var(--success);" id="statRemainingPlan">31,550</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Campaign Data Table -->
+        <div class="table-card">
+          <div class="table-scroll-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Campaign Name</th>
+                  <th>Status</th>
+                  <th>Type</th>
+                  <th>Recipients</th>
+                  <th>Delivery Rate</th>
+                  <th>Seen By</th>
+                  <th>Date</th>
+                  <th style="width: 130px; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination-bar">
+            <span>Rows per page: <strong>100</strong></span>
+            <span id="paginationInfo">Showing 1-12 of 12</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE VIEW 2: SINGLE CAMPAIGN DETAILED ANALYTIC VIEW (/campaigns/:id) -->
+      <div id="detail-view" class="page-view">
+        <div class="breadcrumb-nav">
+          <a class="link" href="8.Campaign%20(not%20final%202).html" style="text-decoration:none;"><i class="fa-solid fa-arrow-left"></i> Campaigns</a>
+          <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i>
+          <span id="breadcrumbCampaignName" style="color: var(--text-dark); font-weight: 600;">Black Friday 2026 — VIP list</span>
+        </div>
+
+        <div class="sticky-top-block">
+          <div class="page-title-row">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <h1 class="page-title" id="detailCampaignTitle">Black Friday 2026 — VIP list</h1>
+              <span class="status-badge started" id="detailStatusBadge">STARTED</span>
+              <span class="countdown-chip" id="detailCountdownChip"><i class="fa-regular fa-clock"></i> Starts in 1d 1h</span>
+            </div>
+            <div class="action-group">
+              <button class="btn btn-outline" id="refreshBtn" onclick="refreshAnalytics()"><i class="fa-solid fa-arrows-rotate"></i> Refresh in 30s</button>
+              <button class="btn btn-purple" id="detailStartBtn" onclick="startCurrentDetailCampaign()"><i class="fa-solid fa-play"></i> Start</button>
+              <button class="btn btn-outline" style="color: var(--warning); border-color: var(--warning-light);" id="detailCancelBtn" onclick="cancelCurrentDetailCampaign()"><i class="fa-solid fa-xmark"></i> Cancel</button>
+              <button class="btn btn-danger" onclick="deleteCurrentDetailCampaign()"><i class="fa-solid fa-trash-can"></i> Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail Layout: Analytics & Mobile Phone Visual -->
+        <div class="detail-layout">
+          
+          <!-- Left Column Analytics Body -->
+          <div class="detail-main">
+            
+            <!-- 6 KPI Metric Cards Grid -->
+            <div class="kpi-cards-grid">
+              <div class="metric-card">
+                <span class="metric-card-title">Audience</span>
+                <span class="metric-card-val" id="kpiAudience">12,480</span>
+                <span class="metric-card-sub" id="kpiAudienceSub">Tag: VIP List</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card-title">Sent / Pending</span>
+                <span class="metric-card-val" id="kpiSent">12,480</span>
+                <span class="metric-card-sub" style="color: var(--success);" id="kpiPendingSub">0 pending</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card-title">Delivered Rate</span>
+                <span class="metric-card-val" style="color: var(--color-purple);" id="kpiDeliveredPct">95.4%</span>
+                <span class="metric-card-sub" id="kpiDeliveredCount">11,902 msgs</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card-title">Open & CTR</span>
+                <span class="metric-card-val" style="color: #0284c7;" id="kpiOpenRate">70.0%</span>
+                <span class="metric-card-sub" id="kpiCTRSub">14.2% CTR</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card-title">Replies</span>
+                <span class="metric-card-val" id="kpiReplies">412</span>
+                <span class="metric-card-sub">3.4% response rate</span>
+              </div>
+              <div class="metric-card alert-card">
+                <span class="metric-card-title">Failed / SMS</span>
+                <span class="metric-card-val" id="kpiFailed">578</span>
+                <span class="metric-card-sub" style="color: #c53030;" id="kpiFallbackSub">42 SMS Fallback</span>
+              </div>
+            </div>
+
+            <!-- Conversion Funnel & Tech Metrics Panel -->
+            <div class="analytics-section">
+              <div class="analytics-panel">
+                <div class="panel-header">
+                  <span>Conversion & Attainment Funnel</span>
+                  <i class="fa-solid fa-filter" style="color: var(--text-muted); font-size: 13px;"></i>
+                </div>
+                <div class="funnel-container">
+                  <div class="funnel-step">
+                    <div class="funnel-label-row"><span>1. Targeted Recipients</span><span>12,480 (100%)</span></div>
+                    <div class="funnel-bar-bg"><div class="funnel-bar-fill" style="width: 100%; background-color: #94a3b8;">12,480</div></div>
+                  </div>
+                  <div class="funnel-drop-badge"><i class="fa-solid fa-arrow-down"></i> 95.4% Delivery Rate</div>
+                  <div class="funnel-step">
+                    <div class="funnel-label-row"><span>2. Delivered</span><span>11,902 (95.4%)</span></div>
+                    <div class="funnel-bar-bg"><div class="funnel-bar-fill" style="width: 95.4%; background-color: var(--success);">11,902</div></div>
+                  </div>
+                  <div class="funnel-drop-badge"><i class="fa-solid fa-arrow-down"></i> 73.3% Open Rate</div>
+                  <div class="funnel-step">
+                    <div class="funnel-label-row"><span>3. Opened / Seen</span><span>8,720 (70.0%)</span></div>
+                    <div class="funnel-bar-bg"><div class="funnel-bar-fill" style="width: 70%; background-color: var(--color-purple);">8,720</div></div>
+                  </div>
+                  <div class="funnel-drop-badge"><i class="fa-solid fa-arrow-down"></i> 20.3% Click Rate</div>
+                  <div class="funnel-step">
+                    <div class="funnel-label-row"><span>4. Clicked Link</span><span>1,770 (14.2%)</span></div>
+                    <div class="funnel-bar-bg"><div class="funnel-bar-fill" style="width: 25%; background-color: #0284c7;">1,770</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Secondary Metrics Panel -->
+              <div class="analytics-panel">
+                <div class="panel-header">
+                  <span>Performance & Delivery Tech</span>
+                  <i class="fa-solid fa-chart-pie" style="color: var(--text-muted); font-size: 13px;"></i>
+                </div>
+                <div class="secondary-stats-grid">
+                  <div class="sec-stat-box">
+                    <div class="sec-stat-title">Native Viber</div>
+                    <div class="sec-stat-val" style="color: var(--color-purple);">95.4%</div>
+                  </div>
+                  <div class="sec-stat-box">
+                    <div class="sec-stat-title">SMS Fallback</div>
+                    <div class="sec-stat-val" style="color: #d97706;">0.3%</div>
+                  </div>
+                  <div class="sec-stat-box">
+                    <div class="sec-stat-title">Failed Drops</div>
+                    <div class="sec-stat-val" style="color: var(--danger);">4.3%</div>
+                  </div>
+                  <div class="sec-stat-box">
+                    <div class="sec-stat-title">Tracked Clicks</div>
+                    <div class="sec-stat-val">1,689</div>
+                  </div>
+                  <div class="sec-stat-box">
+                    <div class="sec-stat-title">Revenue Gen.</div>
+                    <div class="sec-stat-val" style="color: var(--success);">$4,250</div>
+                  </div>
+                  <div class="sec-stat-box">
+                    <div class="sec-stat-title">User Blocks</div>
+                    <div class="sec-stat-val">12</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Searchable Recipient Audit Log DataGrid -->
+            <div class="audit-log-card">
+              <div class="audit-log-toolbar">
+                <div class="audit-filters">
+                  <span class="audit-chip active" onclick="filterAuditLog('All', this)">All</span>
+                  <span class="audit-chip" onclick="filterAuditLog('Seen', this)"><i class="fa-solid fa-eye"></i> Seen</span>
+                  <span class="audit-chip" onclick="filterAuditLog('Delivered', this)"><i class="fa-solid fa-check-double"></i> Delivered</span>
+                  <span class="audit-chip" onclick="filterAuditLog('Sent', this)"><i class="fa-solid fa-paper-plane"></i> Sent</span>
+                  <span class="audit-chip" onclick="filterAuditLog('Pending', this)"><i class="fa-solid fa-hourglass-start"></i> Pending</span>
+                  <span class="audit-chip" onclick="filterAuditLog('Expired', this)"><i class="fa-solid fa-phone-slash"></i> Expired</span>
+                </div>
+                <div class="search-input-wrapper" style="max-width: 240px;">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="auditSearchInput" class="search-input" placeholder="Search records..." oninput="renderAuditLog()" />
+                </div>
+              </div>
+              <div class="table-scroll-container" style="max-height: 380px;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Recipient Name</th>
+                      <th>Phone Number</th>
+                      <th>Target Tag</th>
+                      <th>Status</th>
+                      <th>Channel</th>
+                      <th>Device</th>
+                      <th>Clicks</th>
+                      <th>Sent At</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditLogTbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right Column Sticky Phone Preview Sidebar -->
+          <div class="detail-sidebar">
+            <div class="phone-mockup" style="margin: 0 auto;">
+              <div class="phone-top-bar">
+                <span>16:32</span>
+                <div style="display:flex; gap:4px; font-size:10px;"><i class="fa-solid fa-signal"></i><i class="fa-solid fa-wifi"></i><i class="fa-solid fa-battery-full"></i></div>
+              </div>
+              <div class="phone-nav-header">
+                <i class="fa-solid fa-chevron-left" id="phoneBackBtn" style="color: var(--color-purple); cursor: pointer; visibility: hidden;" onclick="resetPhoneToTemplate()"></i>
+                <span style="font-weight: 700; font-size: 11px;" id="phoneHeaderTitle">Viber Business</span>
+                <i class="fa-solid fa-store" style="color: var(--color-purple);"></i>
+              </div>
+              <div class="phone-chat-area" id="phoneChatArea">
+                <div class="phone-bubble outbound">
+                  <span id="detailPhoneMessageText">Hi Elena! Black Friday starts now — 30% off everything in store and online. Offer ends Sunday at midnight.</span>
+                  <div class="phone-bubble-time">16:31</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Streamlined Creation/Edit Modal -->
+  <div class="modal-overlay" id="createCampaignModal">
+    <div class="split-modal">
+      <div class="split-modal-left">
+        <h2 class="split-modal-title" id="modalTitleText">Create New Campaign</h2>
+        <div class="stepper-bar">
+          <div class="stepper-line"></div>
+          <div class="stepper-item active" id="stepIndicator1">
+            <div class="stepper-circle">1</div>
+            <span class="stepper-label">Details / Template</span>
+          </div>
+          <div class="stepper-item" id="stepIndicator2">
+            <div class="stepper-circle">2</div>
+            <span class="stepper-label">Audience</span>
+          </div>
+          <div class="stepper-item" id="stepIndicator3">
+            <div class="stepper-circle">3</div>
+            <span class="stepper-label">Schedule</span>
+          </div>
+          <div class="stepper-item" id="stepIndicator4">
+            <div class="stepper-circle">4</div>
+            <span class="stepper-label">Review</span>
+          </div>
+        </div>
+
+        <div class="wizard-step-panel active" id="wizardStep1">
+          <div class="floating-fieldset">
+            <span class="floating-label">Campaign Name *</span>
+            <input type="text" id="wizardCampaignName" class="fieldset-input" placeholder="e.g. Black Friday Sale" required />
+          </div>
+          <div class="floating-fieldset">
+            <span class="floating-label">Select Template *</span>
+            <select id="wizardTemplateSelect" class="fieldset-select" onchange="updateLivePreview()">
+              <option value="bf30">Black Friday — 30% Off</option>
+              <option value="flash_sale">Weekend Flash Promo</option>
+              <option value="newsletter">December Newsletter</option>
+              <option value="loyalty">Loyalty Points Bonus</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="wizard-step-panel" id="wizardStep2">
+          <div class="floating-fieldset">
+            <span class="floating-label">Audience Type *</span>
+            <select id="wizardAudienceType" class="fieldset-select">
+              <option value="all">All Recipients</option>
+              <option value="tags">Filter by Tags</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="wizard-step-panel" id="wizardStep3">
+          <div class="floating-fieldset">
+            <span class="floating-label">Schedule Type *</span>
+            <select id="wizardScheduleType" class="fieldset-select">
+              <option value="immediate">Send Immediately</option>
+              <option value="later">Schedule for Later</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="wizard-step-panel" id="wizardStep4">
+          <div style="font-size: 13px;">Review campaign configuration before launching.</div>
+        </div>
+
+        <div class="split-modal-footer">
+          <button class="btn btn-outline" onclick="closeModal('createCampaignModal')">Cancel</button>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-outline" id="wizardBackBtn" style="display: none;" onclick="navigateWizardStep(-1)">Back</button>
+            <button class="btn btn-purple" id="wizardNextBtn" onclick="navigateWizardStep(1)">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="split-modal-right">
+        <div class="phone-mockup">
+          <div class="phone-top-bar"><span>16:31</span></div>
+          <div class="phone-chat-area">
+            <div class="phone-bubble outbound">
+              <span id="previewMessageText">Hi {{first_name}}! Black Friday starts now — 30% off everything in store and online.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentWizardStep = 1;
+    let selectedCampaignId = 1;
+    let activeAuditStatusFilter = 'All';
+
+    // Campaigns Dataset
+    let campaigns = [
+      { id: 1, name: 'Black Friday 2026 — VIP list', status: 'Started', type: 'Scheduled', recipients: 12480, deliveryRate: 95.4, seenBy: 70.0, date: '31/08/26 15:00', template: 'bf30', isScheduledFuture: true },
+      { id: 2, name: 'Weekend Flash Promo', status: 'Started', type: 'Scheduled', recipients: 8400, deliveryRate: 45.0, seenBy: 32.0, date: '31/08/26 12:30', template: 'flash_sale', isScheduledFuture: false },
+      { id: 3, name: 'Order Shipped Alert', status: 'Finished', type: 'Direct', recipients: 120, deliveryRate: 100.0, seenBy: 98.0, date: '29/08/26 16:30', template: 'newsletter', isScheduledFuture: false },
+      { id: 4, name: 'December Newsletter', status: 'Finished', type: 'Regular', recipients: 45000, deliveryRate: 99.0, seenBy: 84.0, date: '25/08/26 16:30', template: 'newsletter', isScheduledFuture: false },
+      { id: 5, name: 'Loyalty points update', status: 'Finished', type: 'Regular', recipients: 6200, deliveryRate: 100.0, seenBy: 91.0, date: '22/08/26 16:30', template: 'loyalty', isScheduledFuture: false },
+      { id: 6, name: 'Cancelled Draft Promo', status: 'Cancelled', type: 'Regular', recipients: 1800, deliveryRate: 0.0, seenBy: 0.0, date: '19/08/26 16:30', template: 'bf30', isScheduledFuture: false }
+    ];
+
+    // Audit Log Dataset
+    let auditLogs = [
+      { id: 101, name: 'Elena Petrova', phone: '+359881234510', tag: 'vip', status: 'Seen', channel: 'Viber', device: 'iOS', clicks: 2, time: '31 Aug 2026, 16:18', reply: 'Does the discount work on outlet items too?' },
+      { id: 102, name: 'Georgi Dimitrov', phone: '+359881234511', tag: 'sofia', status: 'Delivered', channel: 'Viber', device: 'Android', clicks: 0, time: '31 Aug 2026, 16:11', reply: null },
+      { id: 103, name: 'Maria Ivanova', phone: '+359881234512', tag: 'newsletter', status: 'Sent', channel: 'Viber', device: 'iOS', clicks: 1, time: '31 Aug 2026, 16:04', reply: null },
+      { id: 104, name: 'Nikolay Stoyanov', phone: '+359881234513', tag: 'varna', status: 'Pending', channel: 'Viber', device: 'Android', clicks: 0, time: '31 Aug 2026, 15:57', reply: null },
+      { id: 105, name: 'Desislava Koleva', phone: '+359881234514', tag: 'plovdiv', status: 'Expired', channel: 'SMS', device: 'iOS', clicks: 0, time: '31 Aug 2026, 15:50', reply: null }
+    ];
+
+    const templateTexts = {
+      'bf30': 'Hi Elena! Black Friday starts now — 30% off everything in store and online. Offer ends Sunday at midnight.',
+      'flash_sale': 'Flash Sale Alert! Enjoy 20% off all selected items for the next 24 hours only.',
+      'newsletter': 'Here is your monthly news update from Acme Retail! Check out our new arrivals.',
+      'loyalty': 'You have accrued new loyalty points! Redeem them on your next order.'
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderTable();
+      const requestedId = parseInt(new URLSearchParams(window.location.search).get("campaign"), 10);
+      if (requestedId) {
+        // Fall back to the first campaign when the id has no detail data yet.
+        openCampaignDetail(campaigns.some(c => c.id === requestedId) ? requestedId : campaigns[0].id);
+      }
+    });
+
+    function toggleSidebar() { document.body.classList.toggle('sidebar-collapsed'); }
+    function openModal(id) { document.getElementById(id).classList.add("active"); }
+    function closeModal(id) { document.getElementById(id).classList.remove("active"); }
+
+    /* Switch Views */
+    function showListView() {
+      document.getElementById('detail-view').classList.remove('active');
+      document.getElementById('list-view').classList.add('active');
+    }
+
+    function openCampaignDetail(id) {
+      selectedCampaignId = id;
+      const camp = campaigns.find(c => c.id === id);
+      if (!camp) return;
+
+      document.getElementById('breadcrumbCampaignName').innerText = camp.name;
+      document.getElementById('detailCampaignTitle').innerText = camp.name;
+      
+      const badge = document.getElementById('detailStatusBadge');
+      badge.innerText = camp.status;
+      badge.className = `status-badge ${camp.status.toLowerCase()}`;
+
+      // Show/Hide buttons based on campaign phase
+      const countdown = document.getElementById('detailCountdownChip');
+      const startBtn = document.getElementById('detailStartBtn');
+      const cancelBtn = document.getElementById('detailCancelBtn');
+
+      if (camp.status === 'STARTED' && camp.isScheduledFuture) {
+        countdown.style.display = 'inline-flex';
+        cancelBtn.style.display = 'inline-flex';
+        startBtn.style.display = 'none';
+      } else if (camp.status === 'INITIAL' || camp.status === 'CANCELLED') {
+        countdown.style.display = 'none';
+        cancelBtn.style.display = 'none';
+        startBtn.style.display = 'inline-flex';
+      } else {
+        countdown.style.display = 'none';
+        cancelBtn.style.display = 'none';
+        startBtn.style.display = 'none';
+      }
+
+      // Update KPIs & Phone Preview
+      document.getElementById('kpiAudience').innerText = camp.recipients.toLocaleString();
+      document.getElementById('kpiDeliveredPct').innerText = `${camp.deliveryRate}%`;
+      document.getElementById('kpiOpenRate').innerText = `${camp.seenBy}%`;
+
+      document.getElementById('detailPhoneMessageText').innerText = templateTexts[camp.template] || templateTexts['bf30'];
+      resetPhoneToTemplate();
+
+      renderAuditLog();
+
+      document.getElementById('list-view').classList.remove('active');
+      document.getElementById('detail-view').classList.add('active');
+    }
+
+    /* Recipient Audit Log Functions */
+    function filterAuditLog(status, chipEl) {
+      activeAuditStatusFilter = status;
+      document.querySelectorAll('.audit-chip').forEach(c => c.classList.remove('active'));
+      chipEl.classList.add('active');
+      renderAuditLog();
+    }
+
+    function renderAuditLog() {
+      const search = document.getElementById('auditSearchInput').value.toLowerCase();
+      const tbody = document.getElementById('auditLogTbody');
+      let html = '';
+
+      const filtered = auditLogs.filter(item => {
+        const matchesStatus = activeAuditStatusFilter === 'All' || item.status === activeAuditStatusFilter;
+        const matchesSearch = item.name.toLowerCase().includes(search) || item.phone.includes(search);
+        return matchesStatus && matchesSearch;
+      });
+
+      filtered.forEach(log => {
+        html += `
+          <tr class="clickable-row" onclick="openRecipientChat(${log.id})">
+            <td style="font-weight: 600;">${log.name}</td>
+            <td>${log.phone}</td>
+            <td><span class="tag-pill" style="font-size:10px; padding:2px 8px;">${log.tag}</span></td>
+            <td><span class="status-badge" style="font-size:10px; padding:2px 6px;">${log.status}</span></td>
+            <td>${log.channel}</td>
+            <td>${log.device}</td>
+            <td>${log.clicks}</td>
+            <td>${log.time}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    /* Phone Sidebar Mode Switching */
+    function openRecipientChat(logId) {
+      const log = auditLogs.find(l => l.id === logId);
+      if (!log) return;
+
+      document.getElementById('phoneHeaderTitle').innerText = log.name;
+      document.getElementById('phoneBackBtn').style.visibility = 'visible';
+
+      const camp = campaigns.find(c => c.id === selectedCampaignId);
+      const msgText = templateTexts[camp ? camp.template : 'bf30'];
+
+      let chatHtml = `
+        <div class="phone-bubble outbound">
+          <span>${msgText}</span>
+          <div class="phone-bubble-time">16:31</div>
+        </div>
+      `;
+
+      if (log.reply) {
+        chatHtml += `
+          <div class="phone-bubble inbound">
+            <span>${log.reply}</span>
+            <div class="phone-bubble-time">16:34</div>
+          </div>
+        `;
+      }
+
+      document.getElementById('phoneChatArea').innerHTML = chatHtml;
+    }
+
+    function resetPhoneToTemplate() {
+      const camp = campaigns.find(c => c.id === selectedCampaignId);
+      document.getElementById('phoneHeaderTitle').innerText = 'Viber Business';
+      document.getElementById('phoneBackBtn').style.visibility = 'hidden';
+      
+      const msgText = templateTexts[camp ? camp.template : 'bf30'];
+      document.getElementById('phoneChatArea').innerHTML = `
+        <div class="phone-bubble outbound">
+          <span>${msgText}</span>
+          <div class="phone-bubble-time">16:31</div>
+        </div>
+      `;
+    }
+
+    function refreshAnalytics() {
+      const btn = document.getElementById('refreshBtn');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Refreshing...';
+      setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Refresh in 30s'; }, 1000);
+    }
+
+    /* Render Table */
+    function renderTable() {
+      const tbody = document.getElementById("tableBody");
+      let html = "";
+      campaigns.forEach(item => {
+        html += `
+          <tr class="clickable-row" onclick="openCampaignDetail(${item.id})">
+            <td style="font-weight: 600;">${item.name}</td>
+            <td><span class="status-badge ${item.status.toLowerCase()}">${item.status}</span></td>
+            <td>${item.type}</td>
+            <td>${item.recipients.toLocaleString()}</td>
+            <td><div class="rate-container"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${item.deliveryRate}%;"></div></div><span>${item.deliveryRate}%</span></div></td>
+            <td><div class="rate-container"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${item.seenBy}%; background-color: var(--success);"></div></div><span>${item.seenBy}%</span></div></td>
+            <td>${item.date}</td>
+            <td>
+              <div class="row-actions">
+                ${item.status === 'INITIAL' ? `<button class="icon-btn start-btn" title="Start" onclick="event.stopPropagation(); startCampaign(${item.id})"><i class="fa-solid fa-play"></i></button>` : ''}
+                <button class="icon-btn danger-hover" title="Delete" onclick="event.stopPropagation(); deleteCampaign(${item.id})"><i class="fa-solid fa-trash-can"></i></button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function openCreateWizard() { openModal('createCampaignModal'); }
+    function navigateWizardStep(dir) {
+      document.getElementById(`wizardStep${currentWizardStep}`).classList.remove('active');
+      currentWizardStep += dir;
+      document.getElementById(`wizardStep${currentWizardStep}`).classList.add('active');
+    }
+    function handleFilters() {}
+    function resetFilters() {}
+  </script>
+</body>
+</html>

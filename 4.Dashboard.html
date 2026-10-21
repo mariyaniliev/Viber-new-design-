@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSG PLS - Viber Marketing Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --color-purple: #6857d5;
+      --color-purple-hover: #5746be;
+      --color-purple-bg: rgba(104, 87, 213, 0.08);
+
+      --danger: #ea5455;
+      --success: #28c76f;
+      --warning: #ff9f43;
+      --info: #00cfe8;
+      
+      --text-dark: #1e1e1e;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --bg-light: #f8fafc;
+      --sidebar-width: 250px;
+      --sidebar-collapsed-width: 70px;
+      --header-height: 68px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { display: flex; background-color: #f8fafc; color: #1e293b; min-height: 100vh; overflow-x: hidden; }
+
+    /* Collapsible Sidebar Navigation */
+    aside {
+      width: var(--sidebar-width);
+      background-color: #ffffff;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    body.sidebar-collapsed aside { width: var(--sidebar-collapsed-width); }
+
+    .brand {
+      height: var(--header-height);
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      height: 38px;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      overflow: hidden;
+    }
+
+    .brand-logo-container img { height: 38px; width: auto; object-fit: contain; }
+    body.sidebar-collapsed .brand-logo-container { opacity: 0; visibility: hidden; }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--text-dark);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .hamburger-btn:hover { background-color: var(--color-purple-bg); color: var(--color-purple); }
+
+    .nav-list-wrapper { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 8px; }
+    .nav-list-wrapper::-webkit-scrollbar { width: 4px; }
+    .nav-list-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .nav-list { list-style: none; }
+    .nav-item {
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 500;
+      margin-bottom: 4px;
+      transition: background-color 0.2s, color 0.2s;
+      height: 44px;
+      position: relative;
+      text-decoration: none;
+    }
+    .nav-item i { font-size: 18px; min-width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-item span { transition: opacity 0.2s ease, visibility 0.2s ease; }
+    body.sidebar-collapsed .nav-item span { opacity: 0; visibility: hidden; }
+
+    .nav-item:hover { background-color: var(--bg-light); color: var(--text-dark); }
+    .nav-item.active { background-color: var(--color-purple-bg); color: var(--color-purple); font-weight: 600; }
+
+    /* Unread Messages Pulse Dot */
+    .unread-pulse-dot {
+      width: 9px;
+      height: 9px;
+      background-color: var(--danger);
+      border-radius: 50%;
+      position: absolute;
+      right: 14px;
+      box-shadow: 0 0 0 2px #ffffff;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(234, 84, 85, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 84, 85, 0); }
+    }
+
+
+    .version-tag { 
+      padding: 16px 20px; 
+      font-size: 12px; 
+      color: var(--text-muted); 
+      border-top: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    /* Main Container */
+    main { flex: 1; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+    
+    header {
+      background: #ffffff;
+      height: var(--header-height);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .user-profile { display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; }
+
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+    }
+
+    .page-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .page-title { font-size: 26px; font-weight: 700; }
+
+    /* Updated Table Card Styles */
+    .table-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .table-scroll-container { overflow-x: auto; position: relative; }
+
+    .table-card table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+    .table-card th, .table-card td { padding: 14px 20px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+    
+    .table-card th {
+      position: sticky;
+      top: 0;
+      background-color: #f8fafc;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      z-index: 10;
+      box-shadow: 0 1px 0 var(--border-color);
+    }
+
+    .table-card tbody tr { cursor: pointer; transition: background-color 0.15s; }
+    .table-card tbody tr:hover { background-color: #f8fafc; }
+
+    .status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-sent { color: #28c76f; }
+
+    /* Interactive Date Picker Styling */
+    .date-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      color: #475569;
+      transition: all 0.2s ease;
+    }
+    .date-btn:hover { color: #0f172a; background-color: #f1f5f9; }
+    .date-btn.active {
+      background-color: #f3e8ff;
+      color: #6857d5;
+      font-weight: 600;
+    }
+
+    /* Collapsible checklist animation */
+    #checklistContent {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar">
+    <div class="brand">
+      <button class="hamburger-btn" id="sidebarToggle" onclick="toggleSidebar()" title="Toggle Menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="brand-logo-container">
+        <img src="logoNew.png" alt="MSG PLS Logo" />
+      </div>
+    </div>
+
+    <div class="nav-list-wrapper">
+      <ul class="nav-list">
+        <li><a class="nav-item active" href="4.Dashboard.html"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a></li>
+        <li>
+          <a class="nav-item" href="5.Messages.html">
+            <i class="fa-solid fa-comments"></i>
+            <span>Messages</span>
+            <div class="unread-pulse-dot" id="sidebarUnreadDot" title="New unread replies"></div>
+          </a>
+        </li>
+        <li><a class="nav-item" href="6.template.html"><i class="fa-solid fa-layer-group"></i> <span>Templates</span></a></li>
+        <li><a class="nav-item" href="7.Recipients.html"><i class="fa-solid fa-users"></i> <span>Recipients</span></a></li>
+        <li><a class="nav-item" href="8.Campaign%20(not%20final%202).html"><i class="fa-solid fa-bullhorn"></i> <span>Campaigns</span></a></li>
+        <li><a class="nav-item" href="9.Automations%20(not%20final).html"><i class="fa-solid fa-robot"></i> <span>Automations</span></a></li>
+        <li><a class="nav-item" href="#" onclick="return false;" title="Coming soon"><i class="fa-solid fa-gear"></i> <span>Settings</span></a></li>
+      </ul>
+    </div>
+
+    <div class="version-tag">
+      <span>v2.6.0</span>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main>
+    <header>
+      <div class="user-profile text-sm">
+        <i class="fa-solid fa-circle-user fa-lg" style="color: var(--color-purple)"></i> Business Account <i class="fa-solid fa-angle-down"></i>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- HEADER & DATE PICKER -->
+      <div class="page-title-row">
+        <h1 class="page-title">Dashboard</h1>
+        
+        <!-- Interactive Date-Range Picker -->
+        <div class="relative flex flex-col items-end gap-2">
+          <div class="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 shadow-xs w-fit" id="datePickerGroup">
+            <button onclick="setDateRange('7days', this)" class="date-btn active">Last 7 days</button>
+            <button onclick="setDateRange('30days', this)" class="date-btn">Last 30 days</button>
+            <button onclick="setDateRange('month', this)" class="date-btn">This Month</button>
+            <button onclick="toggleCustomDatePicker(this)" class="date-btn flex items-center gap-1 border-l border-slate-200 pl-2">
+              <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Custom
+            </button>
+          </div>
+
+          <!-- Custom Date Input Popover -->
+          <div id="customDatePopover" class="hidden absolute top-10 right-0 z-50 bg-white border border-slate-200 shadow-lg rounded-xl p-3 flex items-center gap-2 text-xs">
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-semibold text-slate-500 uppercase">From</label>
+              <input type="date" id="startDate" class="border border-slate-200 rounded px-2 py-1 text-xs focus:outline-purple-600" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-semibold text-slate-500 uppercase">To</label>
+              <input type="date" id="endDate" class="border border-slate-200 rounded px-2 py-1 text-xs focus:outline-purple-600" />
+            </div>
+            <button onclick="applyCustomDates()" class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-1.5 rounded-md text-xs">Apply</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+
+      <!-- ACCOUNT SETUP CHECKLIST (COLLAPSIBLE HEADER + STEP CONTENT) -->
+      <div id="accountSetupCard" class="bg-white rounded-xl border border-dashed border-purple-300 p-6 shadow-xs w-full transition-all duration-300">
+        <div class="w-full">
+          <!-- Always Visible Header -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-purple-700 font-bold text-base">
+              <i data-lucide="rocket" class="w-5 h-5"></i>
+              <span>Account Setup Checklist</span>
+              <span id="completionBadge" class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium ml-2">1 of 4 completed</span>
+            </div>
+            
+            <!-- Toggle Hide / Show Button -->
+            <button id="toggleChecklistBtn" onclick="toggleChecklistContent()" class="text-xs text-slate-500 hover:text-purple-700 flex items-center gap-1.5 font-medium bg-slate-100 hover:bg-purple-50 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-purple-200 transition-all">
+              <i id="toggleBtnIcon" data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+              <span id="toggleBtnText">Hide Checklist</span>
+            </button>
+          </div>
+
+          <!-- Collapsible Content (Subtext & Steps) -->
+          <div id="checklistContent" class="mt-4 space-y-3">
+            <p class="text-xs text-slate-500 mb-3">Complete these 4 steps to launch your first high-converting Viber campaign:</p>
+
+            <!-- Step 1: Connect Viber Business Sender ID (Completed) -->
+            <div class="checklist-step flex items-center justify-between bg-slate-50 p-3 rounded-lg" data-step="1" data-completed="true">
+              <div class="flex items-center gap-3">
+                <div class="step-icon w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">✓</div>
+                <span class="step-text text-xs font-medium text-slate-700 line-through">1. Connect Viber Business Sender ID</span>
+              </div>
+              <span class="step-action text-xs text-emerald-600 font-semibold">Completed</span>
+            </div>
+
+            <!-- Step 2: Add Recipients, Custom Columns & Tags -->
+            <div class="checklist-step flex items-center justify-between bg-white border p-3 rounded-lg" data-step="2" data-completed="false">
+              <div class="flex items-center gap-3">
+                <div class="step-icon w-5 h-5 rounded-full border-2 border-purple-600 text-purple-600 flex items-center justify-center text-xs font-bold">2</div>
+                <span class="step-text text-xs font-semibold text-slate-900">Add recipients, custom columns, and tags</span>
+              </div>
+              <button onclick="completeStep(2)" class="step-action text-xs bg-purple-600 text-white font-medium px-3 py-1.5 rounded-md hover:bg-purple-700 transition-colors">Import Contacts</button>
+            </div>
+
+            <!-- Step 3: Create & Submit Viber Template -->
+            <div class="checklist-step flex items-center justify-between bg-white border p-3 rounded-lg" data-step="3" data-completed="false">
+              <div class="flex items-center gap-3">
+                <div class="step-icon w-5 h-5 rounded-full border-2 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-bold">3</div>
+                <span class="step-text text-xs font-medium text-slate-600">Create & submit your first Viber template</span>
+              </div>
+              <button onclick="completeStep(3)" class="step-action text-xs border text-slate-600 font-medium px-3 py-1.5 rounded-md hover:bg-slate-50 transition-colors">Create Template</button>
+            </div>
+
+            <!-- Step 4: Create Campaign -->
+            <div class="checklist-step flex items-center justify-between bg-white border p-3 rounded-lg" data-step="4" data-completed="false">
+              <div class="flex items-center gap-3">
+                <div class="step-icon w-5 h-5 rounded-full border-2 border-slate-300 text-slate-400 flex items-center justify-center text-xs font-bold">4</div>
+                <span class="step-text text-xs font-medium text-slate-600">Create and launch your first campaign</span>
+              </div>
+              <button onclick="completeStep(4)" class="step-action text-xs border text-slate-600 font-medium px-3 py-1.5 rounded-md hover:bg-slate-50 transition-colors">Create Campaign</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. "NEEDS ATTENTION" STRIP -->
+      <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-4 shadow-xs">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            <h2 class="text-xs font-semibold text-amber-900 uppercase tracking-wider">Needs Attention (3)</h2>
+          </div>
+          <span class="text-xs text-amber-700 font-medium">Action required to preserve deliverability & response rates</span>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- Unread Replies -->
+          <div class="bg-white border border-red-200 rounded-lg p-3 flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-red-50 text-red-600 rounded-lg">
+                <i data-lucide="message-square-dot" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 font-medium">Unread Customer Replies</p>
+                <p class="text-sm font-bold text-slate-900">5 Waiting <span class="text-xs font-normal text-slate-500">(avg response: 18m)</span></p>
+              </div>
+            </div>
+            <button class="text-xs font-semibold text-red-600 hover:text-red-700 underline">Open Inbox</button>
+          </div>
+
+          <!-- Pending Template Approval -->
+          <div class="bg-white border border-amber-200 rounded-lg p-3 flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                <i data-lucide="clock" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 font-medium">Viber Template Approval</p>
+                <p class="text-sm font-bold text-slate-900">2 Templates Pending</p>
+              </div>
+            </div>
+            <button class="text-xs font-semibold text-amber-600 hover:text-amber-700 underline">Check Status</button>
+          </div>
+
+          <!-- Quota Failure Warning -->
+          <div class="bg-white border border-red-200 rounded-lg p-3 flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-red-50 text-red-600 rounded-lg">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 font-medium">Quota Warning</p>
+                <p class="text-sm font-bold text-red-600">"Summer Blitz" will fail (+340 over)</p>
+              </div>
+            </div>
+            <button class="text-xs font-semibold text-red-600 hover:text-red-700 underline">Upgrade Plan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROI FRAMING BANNER -->
+      <div class="bg-gradient-to-r from-purple-900 to-indigo-900 text-white rounded-xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-white/10 rounded-lg">
+            <i data-lucide="piggy-bank" class="w-6 h-6 text-purple-300"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-purple-100">Monthly Plan Value & Savings Snapshot</h3>
+            <p class="text-xs text-purple-200">Growth Plan (€350/mo) • Up to 8,821 promo messages</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-6">
+          <div>
+            <p class="text-xs text-purple-300 uppercase font-medium">Est. Cost / Delivered</p>
+            <p class="text-lg font-bold">€0.026 <span class="text-xs font-normal text-purple-300">/ msg</span></p>
+          </div>
+          <div class="border-l border-purple-700/60 pl-6">
+            <p class="text-xs text-purple-300 uppercase font-medium">Est. Saved vs SMS</p>
+            <p class="text-lg font-bold text-emerald-400">~€310.40 <span class="text-xs font-normal text-purple-300">this month</span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- METRIC CARDS WITH COMPARISON DELTAS -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <!-- Delivered -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <p class="text-xs font-medium text-slate-500">Delivered</p>
+          <p class="text-xl font-bold text-slate-900 mt-1" id="metricDelivered">13,762</p>
+          <div class="flex items-center gap-1 mt-2 text-xs font-medium text-emerald-600">
+            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i> ▲ 39% <span class="text-slate-400 font-normal">vs prev</span>
+          </div>
+        </div>
+
+        <!-- Read Rate -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <p class="text-xs font-medium text-slate-500">Read Rate</p>
+          <p class="text-xl font-bold text-slate-900 mt-1" id="metricReadRate">89.4%</p>
+          <div class="flex items-center gap-1 mt-2 text-xs font-medium text-emerald-600">
+            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i> ▲ 2.1% <span class="text-slate-400 font-normal">vs prev</span>
+          </div>
+        </div>
+
+        <!-- CTR -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <p class="text-xs font-medium text-slate-500">CTR (Link Clicks)</p>
+          <p class="text-xl font-bold text-slate-900 mt-1" id="metricCTR">14.2%</p>
+          <div class="flex items-center gap-1 mt-2 text-xs font-medium text-emerald-600">
+            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i> ▲ 1.8% <span class="text-slate-400 font-normal">vs prev</span>
+          </div>
+        </div>
+
+        <!-- Reply Rate -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <p class="text-xs font-medium text-slate-500">Reply Rate</p>
+          <p class="text-xl font-bold text-slate-900 mt-1" id="metricReplyRate">4.8%</p>
+          <div class="flex items-center gap-1 mt-2 text-xs font-medium text-amber-600">
+            <i data-lucide="arrow-down-right" class="w-3.5 h-3.5"></i> ▼ 0.3% <span class="text-slate-400 font-normal">vs prev</span>
+          </div>
+        </div>
+
+        <!-- Blocked / Opt-outs -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <p class="text-xs font-medium text-slate-500">Opt-outs / Blocked</p>
+          <p class="text-xl font-bold text-slate-900 mt-1">12 <span class="text-xs font-normal text-slate-400">(0.08%)</span></p>
+          <div class="flex items-center gap-1 mt-2 text-xs font-medium text-emerald-600">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Healthy (&lt;0.5%)
+          </div>
+        </div>
+
+        <!-- Audience Health Card -->
+        <div class="bg-white p-4 rounded-xl border border-purple-200 bg-purple-50/20 shadow-xs">
+          <p class="text-xs font-medium text-purple-900">Total Reachable</p>
+          <p class="text-xl font-bold text-purple-900 mt-1">8,450</p>
+          <div class="flex items-center gap-1 mt-2 text-xs font-medium text-purple-700">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> +310 this period
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN DASHBOARD CONTENT AREA (CAMPAIGN SNAPSHOT TABLE + SIDEBAR) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- RECENT CAMPAIGNS SNAPSHOT TABLE -->
+        <div class="lg:col-span-2 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Recent Campaigns Performance</h3>
+              <p class="text-xs text-slate-500">Actionable snapshot of delivered, engagement, and replies</p>
+            </div>
+            <button class="text-xs font-semibold text-purple-600 hover:text-purple-700">View All Campaigns &rarr;</button>
+          </div>
+
+          <div class="table-card">
+            <div class="table-scroll-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Campaign</th>
+                    <th>Status</th>
+                    <th>Sent</th>
+                    <th>Read %</th>
+                    <th>CTR</th>
+                    <th>Replies</th>
+                    <th>vs Avg</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-weight:600;" class="text-slate-900">SOS Sofia 06.08</td>
+                    <td>
+                      <span class="status-tag status-sent">
+                        <i class="fa-solid fa-paper-plane"></i> Sent
+                      </span>
+                    </td>
+                    <td>4,200</td>
+                    <td>91.2%</td>
+                    <td>18.4%</td>
+                    <td>42</td>
+                    <td class="text-emerald-600 font-bold">+12%</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;" class="text-slate-900">Client Direct Msg</td>
+                    <td>
+                      <span class="status-tag status-sent">
+                        <i class="fa-solid fa-paper-plane"></i> Sent
+                      </span>
+                    </td>
+                    <td>1,200</td>
+                    <td>84.1%</td>
+                    <td>11.0%</td>
+                    <td>15</td>
+                    <td class="text-amber-600 font-bold">-3%</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:600;" class="text-slate-900">SOS Greece 24.07</td>
+                    <td>
+                      <span class="status-tag status-sent">
+                        <i class="fa-solid fa-paper-plane"></i> Sent
+                      </span>
+                    </td>
+                    <td>3,100</td>
+                    <td>88.0%</td>
+                    <td>15.2%</td>
+                    <td>28</td>
+                    <td class="text-emerald-600 font-bold">+4%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT SIDEBAR: UPCOMING CAMPAIGN + QUICK ACTIONS -->
+        <div class="space-y-6">
+
+          <!-- UPCOMING SCHEDULED CAMPAIGN CARD -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-3">
+            <div class="flex items-center justify-between border-b pb-2">
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="calendar-clock" class="w-4 h-4 text-purple-600"></i> Next Scheduled Send
+              </h3>
+              <span class="text-[10px] font-semibold uppercase bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Queued</span>
+            </div>
+
+            <div>
+              <p class="text-base font-bold text-slate-900">Summer Blitz Promo</p>
+              <p class="text-xs text-slate-500 mt-0.5">Aug 15, 2026 • 09:00 AM</p>
+            </div>
+
+            <div class="bg-slate-50 p-3 rounded-lg text-xs space-y-1">
+              <div class="flex justify-between text-slate-600">
+                <span>Recipients:</span>
+                <span class="font-semibold text-slate-900">4,200 contacts</span>
+              </div>
+              <div class="flex justify-between text-slate-600">
+                <span>Est. Cost:</span>
+                <span class="font-semibold text-slate-900">€109.20</span>
+              </div>
+            </div>
+
+            <div class="p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start gap-2">
+              <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+              <span><strong>Quota warning:</strong> Sending this will exceed your monthly limit by 340 messages.</span>
+            </div>
+
+            <div class="flex gap-2 pt-1">
+              <button class="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg text-xs">Resolve & Send</button>
+              <button class="py-2 px-3 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-semibold">Edit</button>
+            </div>
+          </div>
+
+          <!-- QUICK ACTIONS -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-4">
+            <h3 class="text-sm font-bold text-slate-900">Quick Actions</h3>
+            <div class="grid grid-cols-1 gap-2">
+              <button class="w-full flex items-center justify-between p-2.5 border rounded-lg hover:bg-purple-50/50 hover:border-purple-200 text-xs font-semibold text-slate-700 transition-colors">
+                <span class="flex items-center gap-2"><i data-lucide="file-plus-2" class="w-4 h-4 text-purple-600"></i> Create Template</span>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+              </button>
+              <button class="w-full flex items-center justify-between p-2.5 border rounded-lg hover:bg-purple-50/50 hover:border-purple-200 text-xs font-semibold text-slate-700 transition-colors">
+                <span class="flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-purple-600"></i> Import Recipients</span>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-collapsed');
+    }
+
+    /* --- DATE PICKER INTERACTION --- */
+    function setDateRange(range, btn) {
+      document.querySelectorAll('#datePickerGroup .date-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('customDatePopover').classList.add('hidden');
+
+      const delivered = document.getElementById('metricDelivered');
+      const readRate = document.getElementById('metricReadRate');
+      const ctr = document.getElementById('metricCTR');
+      const replyRate = document.getElementById('metricReplyRate');
+
+      if (range === '7days') {
+        delivered.innerText = '13,762';
+        readRate.innerText = '89.4%';
+        ctr.innerText = '14.2%';
+        replyRate.innerText = '4.8%';
+      } else if (range === '30days') {
+        delivered.innerText = '48,910';
+        readRate.innerText = '91.1%';
+        ctr.innerText = '15.6%';
+        replyRate.innerText = '5.2%';
+      } else if (range === 'month') {
+        delivered.innerText = '22,140';
+        readRate.innerText = '88.7%';
+        ctr.innerText = '13.9%';
+        replyRate.innerText = '4.1%';
+      }
+    }
+
+    function toggleCustomDatePicker(btn) {
+      document.querySelectorAll('#datePickerGroup .date-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const popover = document.getElementById('customDatePopover');
+      popover.classList.toggle('hidden');
+    }
+
+    function applyCustomDates() {
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+
+      if (!start || !end) {
+        alert('Please select both start and end dates.');
+        return;
+      }
+
+      document.getElementById('customDatePopover').classList.add('hidden');
+      document.getElementById('metricDelivered').innerText = '18,430';
+      document.getElementById('metricReadRate').innerText = '90.2%';
+    }
+
+    /* --- ACCOUNT SETUP CHECKLIST TOGGLE & STEP COMPLETION --- */
+    let isChecklistCollapsed = false;
+
+    function toggleChecklistContent() {
+      const content = document.getElementById('checklistContent');
+      const btnText = document.getElementById('toggleBtnText');
+      const btnIcon = document.getElementById('toggleBtnIcon');
+
+      isChecklistCollapsed = !isChecklistCollapsed;
+
+      if (isChecklistCollapsed) {
+        content.style.display = 'none';
+        btnText.innerText = 'Show Checklist';
+        btnIcon.setAttribute('data-lucide', 'chevron-down');
+      } else {
+        content.style.display = 'block';
+        btnText.innerText = 'Hide Checklist';
+        btnIcon.setAttribute('data-lucide', 'chevron-up');
+      }
+      lucide.createIcons();
+    }
+
+    function completeStep(stepNumber) {
+      const stepRow = document.querySelector(`.checklist-step[data-step="${stepNumber}"]`);
+      if (!stepRow) return;
+
+      stepRow.dataset.completed = "true";
+      stepRow.classList.remove('bg-white', 'border');
+      stepRow.classList.add('bg-slate-50');
+
+      const iconDiv = stepRow.querySelector('.step-icon');
+      iconDiv.className = 'step-icon w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold';
+      iconDiv.innerText = '✓';
+
+      const textSpan = stepRow.querySelector('.step-text');
+      textSpan.classList.add('line-through', 'text-slate-700');
+      textSpan.classList.remove('font-semibold', 'text-slate-900');
+
+      const actionBtn = stepRow.querySelector('.step-action');
+      actionBtn.outerHTML = '<span class="step-action text-xs text-emerald-600 font-semibold">Completed</span>';
+
+      updateBadgeProgress();
+      checkAllStepsCompleted();
+    }
+
+    function updateBadgeProgress() {
+      const allSteps = document.querySelectorAll('.checklist-step');
+      const completedSteps = Array.from(allSteps).filter(step => step.dataset.completed === "true").length;
+      document.getElementById('completionBadge').innerText = `${completedSteps} of ${allSteps.length} completed`;
+    }
+
+    function checkAllStepsCompleted() {
+      const allSteps = document.querySelectorAll('.checklist-step');
+      const allDone = Array.from(allSteps).every(step => step.dataset.completed === "true");
+
+      if (allDone) {
+        setTimeout(() => {
+          const card = document.getElementById('accountSetupCard');
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(-10px)';
+          setTimeout(() => {
+            card.style.display = 'none';
+          }, 300);
+        }, 800); // Entire card fades out after all steps are finished
+      }
+    }
+
+    // Initialize Lucide Icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>
